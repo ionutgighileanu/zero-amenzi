@@ -86,3 +86,4 @@ npx supabase start   # Supabase local (dacă folosești CLI)
 ## Skills
 - [pm-skills](https://github.com/phuryn/pm-skills)
 - [gstack](https://github.com/garrytan/gstack)
+- [frontend-design](https://www.skills.sh/anthropics/skills/frontend-design)
