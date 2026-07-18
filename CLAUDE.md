@@ -82,3 +82,6 @@ npm run build        # build de producție
 npm run lint         # ESLint
 npx supabase start   # Supabase local (dacă folosești CLI)
 ```
+
+## Skills
+- [pm-skills](https://github.com/phuryn/pm-skills)
