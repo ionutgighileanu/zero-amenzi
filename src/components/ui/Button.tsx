@@ -1,7 +1,8 @@
 import { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from "react";
+import Link from "next/link";
 import { BRAND_BLUE } from "@/lib/constants";
 
-type Variant = "primary" | "outline" | "ghost";
+type Variant = "primary" | "outline" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 type CommonProps = {
@@ -22,6 +23,7 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   outline:
     "bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+  danger: "bg-red-600 text-white hover:bg-red-700",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
@@ -40,6 +42,15 @@ export function Button(props: ButtonProps | AnchorProps) {
 
   if ("href" in props && props.href) {
     const anchorProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
+    // Rutele interne primesc navigare client-side; ancorele (#) și
+    // linkurile externe rămân <a> simplu.
+    if (props.href.startsWith("/")) {
+      return (
+        <Link {...anchorProps} href={props.href} style={style} className={classes}>
+          {children}
+        </Link>
+      );
+    }
     return (
       <a {...anchorProps} href={props.href} style={style} className={classes}>
         {children}

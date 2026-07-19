@@ -36,10 +36,10 @@ export function Nav() {
               {label}
             </a>
           ))}
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" href="/login">
             Conectare
           </Button>
-          <Button variant="primary" size="sm">
+          <Button variant="primary" size="sm" href="/signup">
             Creează cont
           </Button>
         </div>
@@ -65,10 +65,10 @@ export function Nav() {
             </a>
           ))}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex-1">
+            <Button variant="outline" size="sm" className="flex-1" href="/login">
               Conectare
             </Button>
-            <Button variant="primary" size="sm" className="flex-1">
+            <Button variant="primary" size="sm" className="flex-1" href="/signup">
               Creează cont
             </Button>
           </div>

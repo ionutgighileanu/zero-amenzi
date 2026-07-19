@@ -211,8 +211,10 @@ export default function Home() {
               privire ce expiră — fără să deschidă vreun Excel.
             </p>
             <div className="mt-6 flex gap-3">
-              <Button variant="primary">Conectează firma</Button>
-              <Button variant="ghost">
+              <Button variant="primary" href="/signup?tip=firma">
+                Conectează firma
+              </Button>
+              <Button variant="ghost" href="#cum-functioneaza">
                 Cum funcționează <ChevronRight size={16} />
               </Button>
             </div>
@@ -299,7 +301,7 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <Button variant="outline" className="w-full mt-6">
+            <Button variant="outline" className="w-full mt-6" href="/signup">
               Creează cont gratuit
             </Button>
           </div>
@@ -343,7 +345,7 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <Button variant="primary" className="w-full mt-6">
+            <Button variant="primary" className="w-full mt-6" href="/signup">
               Activează PRO
             </Button>
           </div>
@@ -377,7 +379,7 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <Button variant="outline" className="w-full mt-6">
+            <Button variant="outline" className="w-full mt-6" href="/signup?tip=firma">
               Conectează firma
             </Button>
           </div>
@@ -404,7 +406,9 @@ export default function Home() {
             expirare. 30 de secunde, zero bani.
           </p>
           <div className="mt-6 flex justify-center gap-3">
-            <Button size="lg">Creează cont gratuit</Button>
+            <Button size="lg" href="/signup">
+              Creează cont gratuit
+            </Button>
             <Button variant="outline" size="lg" href="#tarife">
               Vezi tarifele
             </Button>
