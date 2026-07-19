@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Loader2, Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
+import { BRAND_BLUE } from "@/lib/constants";
 import { verifyPlate, type VerificationResult } from "@/lib/verify";
 
 type Status = "idle" | "loading" | "found" | "not-found" | "error";
@@ -38,18 +40,29 @@ export function VerificationForm() {
   return (
     <div className="max-w-md">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          value={plate}
-          onChange={(e) => {
-            setPlate(e.target.value.toUpperCase());
-            setStatus("idle");
-            setResult(null);
-          }}
-          placeholder="B 100 ABC"
-          disabled={status === "loading"}
-          className="flex-1 border border-slate-300 rounded-xl px-3 py-3 text-base font-bold tracking-wider text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700 disabled:bg-slate-50"
-          required
-        />
+        <div className="flex-1 relative">
+          <div
+            className="absolute left-0 top-0 bottom-0 w-8 rounded-l-xl flex items-center justify-center text-white text-[9px] font-bold"
+            style={{ backgroundColor: BRAND_BLUE }}
+          >
+            <div className="flex flex-col items-center leading-none gap-0.5">
+              <span className="text-[6px]">★</span>
+              <span>RO</span>
+            </div>
+          </div>
+          <input
+            value={plate}
+            onChange={(e) => {
+              setPlate(e.target.value.toUpperCase());
+              setStatus("idle");
+              setResult(null);
+            }}
+            placeholder="B 100 ABC"
+            disabled={status === "loading"}
+            className="w-full border border-slate-300 rounded-xl pl-11 pr-3 py-3 text-base font-bold tracking-wider text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700 disabled:bg-slate-50 font-display"
+            required
+          />
+        </div>
         <Button type="submit" size="lg" disabled={status === "loading"}>
           {status === "loading" ? (
             <Loader2 size={18} className="mr-2 animate-spin" />
@@ -92,9 +105,7 @@ export function VerificationForm() {
       {status === "found" && result && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-5 mt-4 space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-bold tracking-wider text-slate-900">
-              {result.plate}
-            </span>
+            <Plate plate={result.plate} size="md" />
             <span className="text-sm text-slate-500">{result.vehicle}</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
