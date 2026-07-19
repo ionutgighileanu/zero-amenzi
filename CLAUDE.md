@@ -44,9 +44,9 @@ Monetizare prin comision broker la RCA/CASCO cumpărat prin platformă.
 users               → profil utilizator (id, email, created_at)
 organizations       → firme (id, name, cui, owner_id)
 memberships         → user ↔ org (user_id, org_id, role: owner|admin|member)
-vehicles            → mașini (id, plate, vin, owner_id, org_id, is_truck)
+vehicles            → mașini (id, plate, vin, owner_id, org_id, is_truck, deleted_at)
 vehicle_docs        → documente per mașină (id, vehicle_id, type, expires_at)
-drivers             → șoferi (id, org_id, name, phone)
+drivers             → șoferi (id, org_id, name, phone, deleted_at)
 driver_certs        → atestate șofer (id, driver_id, type, expires_at)
 notifications_log   → istoric alerte trimise
 ```
@@ -60,6 +60,7 @@ notifications_log   → istoric alerte trimise
   - PRO gratuit la fiecare RCA cumpărat prin platformă
 - **B2C:** carduri cu semafor, minimal, airy
 - **B2B:** tabel compact sortabil/filtrabil, KPI strip, tab șoferi
+- **Soft-delete:** ștergerea unui vehicul/șofer setează `deleted_at`, nu șterge rândul. UI arată un banner de 30s cu opțiune Undo (`deleted_at = null`); după expirare, ștergerea devine efectivă din perspectiva UI (rândurile cu `deleted_at` setat sunt excluse din listări).
 
 ## Convenții de cod
 - Toate componentele în `src/components/`
