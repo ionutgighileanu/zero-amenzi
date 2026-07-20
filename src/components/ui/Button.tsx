@@ -33,7 +33,7 @@ const SIZE_CLASSES: Record<Size, string> = {
 };
 
 const BASE_CLASSES =
-  "inline-flex items-center justify-center font-semibold rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-700 disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center font-semibold rounded-xl transition-[color,background-color,border-color,opacity,transform] duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-700 disabled:opacity-50 disabled:pointer-events-none motion-reduce:active:scale-100";
 
 export function Button(props: ButtonProps | AnchorProps) {
   const { children, variant = "primary", size = "md", className = "", ...rest } = props;

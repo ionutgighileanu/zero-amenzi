@@ -22,7 +22,7 @@ export function DocLine({ label, date, onDelete, action }: DocLineProps) {
           <button
             onClick={onDelete}
             aria-label={`Șterge ${label}`}
-            className="p-1 text-slate-300 hover:text-red-600 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+            className="p-1.5 -my-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
           >
             <X size={14} />
           </button>

@@ -59,7 +59,7 @@ export function DriverDetail({
         </div>
 
         <section className="space-y-3">
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Date de contact
           </h4>
           <Input label="Nume complet" value={name} onChange={(e) => setName(e.target.value)} />
@@ -76,7 +76,7 @@ export function DriverDetail({
 
         <section>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Atestate și avize
             </h4>
             {!adding && (
@@ -90,7 +90,7 @@ export function DriverDetail({
             )}
           </div>
           {driver.certs.length === 0 && !adding && (
-            <p className="text-sm text-slate-400 py-2">
+            <p className="text-sm text-slate-500 py-2">
               Niciun document. Adaugă atestate ADR, avize psihologice, fișe medicale…
             </p>
           )}

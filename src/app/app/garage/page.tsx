@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Settings } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { VehicleCard } from "@/components/app/VehicleCard";
 import { VehicleDetail } from "@/components/app/VehicleDetail";
@@ -78,25 +79,28 @@ export default function GaragePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {vehicles.map((v) => (
-          <VehicleCard
-            key={v.id}
-            vehicle={v}
-            onOpen={(veh) => setDetailId(veh.id)}
-            onRca={setRcaVehicle}
-            onCasco={setCascoVehicle}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {vehicles.map((v) => (
+            <VehicleCard
+              key={v.id}
+              vehicle={v}
+              onOpen={(veh) => setDetailId(veh.id)}
+              onRca={setRcaVehicle}
+              onCasco={setCascoVehicle}
+            />
+          ))}
+        </AnimatePresence>
 
         {/* Empty-slot: invitație la acțiune, nu decor */}
-        <button
+        <motion.button
+          layout
           onClick={() => setAddOpen(true)}
-          className="min-h-70 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-slate-400 hover:text-slate-600 transition-colors flex flex-col items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+          className="min-h-70 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors flex flex-col items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
         >
           <Plus size={22} />
           <span className="text-sm font-medium">Adaugă o mașină</span>
           <span className="text-xs">Număr + serie șasiu. Atât.</span>
-        </button>
+        </motion.button>
       </div>
 
       {addOpen && <AddVehicleModal onClose={() => setAddOpen(false)} onSubmit={addVehicle} />}

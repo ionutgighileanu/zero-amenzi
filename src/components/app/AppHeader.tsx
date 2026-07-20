@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Car, Check, ChevronDown, LogOut, Plus, Shield, Truck } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { BRAND_BLUE } from "@/lib/constants";
 import { MOCK_ORG } from "@/lib/vehicles";
+import { DURATION, EASE_OUT } from "@/lib/motion";
 
 type Space = {
   id: string;
@@ -41,24 +43,30 @@ function ContextSwitcher() {
         aria-expanded={open}
       >
         <ActiveIcon size={15} className="text-slate-500" />
-        <span className="text-sm font-semibold text-slate-800 max-w-[9rem] truncate">
+        <span className="text-sm font-semibold text-slate-800 max-w-36 truncate">
           {active.name}
         </span>
         <ChevronDown size={14} className="text-slate-400" />
       </button>
       {open && (
-        <>
-          <button
-            className="fixed inset-0 z-40 cursor-default"
-            aria-hidden
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="absolute left-0 mt-1.5 w-64 bg-white rounded-xl border border-slate-200 shadow-lg z-50 p-1.5"
+        <button
+          className="fixed inset-0 z-40 cursor-default"
+          aria-hidden
+          tabIndex={-1}
+          onClick={() => setOpen(false)}
+        />
+      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -2 }}
+            transition={{ duration: DURATION.state, ease: EASE_OUT }}
+            className="absolute left-0 origin-top-left mt-1.5 w-64 bg-white rounded-xl border border-slate-200 shadow-lg z-50 p-1.5"
             role="menu"
           >
-            <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Spațiile tale
             </p>
             {SPACES.map((s) => {
@@ -80,7 +88,7 @@ function ContextSwitcher() {
                     <span className="block text-sm font-semibold text-slate-800 truncate">
                       {s.name}
                     </span>
-                    <span className="block text-xs text-slate-400">{s.kind}</span>
+                    <span className="block text-xs text-slate-500">{s.kind}</span>
                   </span>
                   {s.id === active.id && <Check size={16} className="text-blue-700 shrink-0" />}
                 </button>
@@ -96,9 +104,9 @@ function ContextSwitcher() {
               </span>
               <span className="text-sm font-medium">Conectează o firmă</span>
             </button>
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -128,7 +136,7 @@ export function AppHeader({ alertCount = 0 }: { alertCount?: number }) {
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <button
-              className="relative p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+              className="relative p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
               aria-label={`Notificări: ${alertCount} alerte`}
             >
               <Bell size={17} />
@@ -136,7 +144,7 @@ export function AppHeader({ alertCount = 0 }: { alertCount?: number }) {
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
               )}
             </button>
-            <span className="text-xs text-slate-400 hidden md:block">{MOCK_EMAIL}</span>
+            <span className="text-xs text-slate-500 hidden md:block">{MOCK_EMAIL}</span>
             <Link
               href="/"
               aria-label="Ieși din cont"

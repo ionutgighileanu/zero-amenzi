@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown,
   ArrowUp,
@@ -26,6 +27,7 @@ import { CascoModal } from "@/components/app/CascoModal";
 import { UndoBanner } from "@/components/app/UndoBanner";
 import { useSoftDelete } from "@/hooks/useSoftDelete";
 import { daysUntil, getStatus } from "@/lib/status";
+import { DURATION } from "@/lib/motion";
 import { BRAND_BLUE, DEFAULT_ALERT_TYPES } from "@/lib/constants";
 import {
   MOCK_DRIVERS,
@@ -71,7 +73,7 @@ function SortHeader({
     <th className="px-4 py-3 text-left">
       <button
         onClick={() => setSort({ col, dir: active && sort.dir === "asc" ? "desc" : "asc" })}
-        className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded ${active ? "text-slate-900" : "text-slate-400"}`}
+        className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded ${active ? "text-slate-900" : "text-slate-500"}`}
       >
         {label} <Icon size={12} />
       </button>
@@ -101,6 +103,7 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
 
   const [tab, setTab] = useState<Tab>("vehicles");
   const [query, setQuery] = useState("");
+  const [driverQuery, setDriverQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>({ col: "urgency", dir: "asc" });
 
@@ -133,6 +136,18 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
     const key = SORT_KEYS[sort.col];
     return [...list].sort((a, b) => (key(a) - key(b)) * dir);
   }, [vehicles, query, filter, sort]);
+
+  const driverRows = useMemo(() => {
+    const q = driverQuery.trim().toLowerCase();
+    if (!q) return drivers;
+    // Ignorăm spațiile din telefon ca „0722 123" să prindă „0722123456".
+    const digits = q.replace(/\s+/g, "");
+    return drivers.filter(
+      (d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.phone.replace(/\s+/g, "").includes(digits)
+    );
+  }, [drivers, driverQuery]);
 
   const problemCount = counts.expired + counts.warning;
   const detailVehicle = detailVehicleId
@@ -232,7 +247,7 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                 <button
                   key={id}
                   onClick={() => setTab(id)}
-                  className={`pb-3 sm:pb-0 inline-flex items-center gap-2 text-sm font-semibold border-b-2 sm:border-b-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-sm ${tab === id ? "text-slate-900 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                  className={`pb-3 sm:pb-0 inline-flex items-center gap-2 text-sm font-semibold border-b-2 sm:border-b-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-sm ${tab === id ? "text-slate-900 border-slate-900" : "text-slate-500 border-transparent hover:text-slate-700"}`}
                 >
                   <Icon size={16} /> {label}
                   <span
@@ -243,24 +258,39 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                 </button>
               ))}
             </nav>
-            {tab === "vehicles" && (
-              <div className="relative sm:ml-auto pb-3 sm:pb-0">
-                <Search
-                  size={15}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 -mt-1.5 sm:mt-0 text-slate-400 pointer-events-none"
-                />
+            <div className="relative sm:ml-auto pb-3 sm:pb-0">
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 -mt-1.5 sm:mt-0 text-slate-400 pointer-events-none"
+              />
+              {tab === "vehicles" ? (
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Caută număr sau VIN"
-                  className="w-full sm:w-64 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700"
+                  aria-label="Caută vehicul după număr sau VIN"
+                  className="w-full sm:w-64 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700"
                 />
-              </div>
-            )}
+              ) : (
+                <input
+                  value={driverQuery}
+                  onChange={(e) => setDriverQuery(e.target.value)}
+                  placeholder="Caută nume sau telefon"
+                  aria-label="Caută șofer după nume sau telefon"
+                  className="w-full sm:w-64 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700"
+                />
+              )}
+            </div>
           </div>
 
           {tab === "vehicles" ? (
-            <div className="overflow-x-auto">
+            <motion.div
+              key="vehicles"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: DURATION.state, ease: "easeOut" }}
+              className="overflow-x-auto"
+            >
               <table className="min-w-full">
                 <thead className="bg-slate-50/70">
                   <tr>
@@ -273,12 +303,18 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {rows.map((v) => (
-                    <tr
-                      key={v.id}
-                      onClick={() => setDetailVehicleId(v.id)}
-                      className="hover:bg-slate-50/60 transition-colors cursor-pointer"
-                    >
+                  <AnimatePresence initial={false}>
+                    {rows.map((v) => (
+                      <motion.tr
+                        key={v.id}
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: DURATION.state, ease: "easeOut" }}
+                        onClick={() => setDetailVehicleId(v.id)}
+                        className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                      >
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <Plate plate={v.plate} size="sm" />
@@ -326,27 +362,36 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                           <ChevronRight size={16} className="text-slate-300" />
                         </div>
                       </td>
-                    </tr>
-                  ))}
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">
-                        Niciun vehicul nu se potrivește. Șterge căutarea sau filtrul activ.
+                      <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">
+                        {vehicles.length === 0
+                          ? "Niciun vehicul în flotă încă. Apasă „Adaugă vehicul” ca să începi."
+                          : "Niciun vehicul nu se potrivește. Șterge căutarea sau filtrul activ."}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
-            </div>
+            </motion.div>
           ) : (
-            <div className="overflow-x-auto">
+            <motion.div
+              key="drivers"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: DURATION.state, ease: "easeOut" }}
+              className="overflow-x-auto"
+            >
               <table className="min-w-full">
                 <thead className="bg-slate-50/70">
                   <tr>
                     {["Șofer", "Telefon", "Atestate și avize", ""].map((h, i) => (
                       <th
                         key={h || "actions"}
-                        className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 ${i === 3 ? "text-right" : ""}`}
+                        className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 ${i === 3 ? "text-right" : ""}`}
                       >
                         {h}
                       </th>
@@ -354,12 +399,18 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {drivers.map((d) => (
-                    <tr
-                      key={d.id}
-                      onClick={() => setDetailDriverId(d.id)}
-                      className="hover:bg-slate-50/60 transition-colors cursor-pointer"
-                    >
+                  <AnimatePresence initial={false}>
+                    {driverRows.map((d) => (
+                      <motion.tr
+                        key={d.id}
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: DURATION.state, ease: "easeOut" }}
+                        onClick={() => setDetailDriverId(d.id)}
+                        className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                      >
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <span
@@ -376,7 +427,7 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                       </td>
                       <td className="px-4 py-3.5">
                         {d.certs.length === 0 ? (
-                          <span className="text-sm text-slate-400">Fără documente încă</span>
+                          <span className="text-sm text-slate-500">Fără documente încă</span>
                         ) : (
                           <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                             {d.certs.map((c) => (
@@ -391,15 +442,25 @@ export default function FleetPage({ params }: { params: Promise<{ orgId: string 
                         )}
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
                           Detalii <ChevronRight size={14} />
                         </span>
                       </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                  {driverRows.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-12 text-center text-sm text-slate-500">
+                        {drivers.length === 0
+                          ? "Niciun șofer încă. Apasă „Adaugă șofer” ca să adaugi primul."
+                          : "Niciun șofer nu se potrivește. Șterge căutarea."}
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

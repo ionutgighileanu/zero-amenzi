@@ -62,7 +62,7 @@ export function RcaModal({ vehicle, onClose }: RcaModalProps) {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     Valabilitate 12 luni · emitere instant
                   </span>
                 </div>

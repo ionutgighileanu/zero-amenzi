@@ -10,7 +10,7 @@ export function StatusCell({ date }: { date: string | null | undefined }) {
   const status = getStatus(date);
   const d = daysUntil(date);
 
-  if (status === "none") return <span className="text-slate-300 text-sm">—</span>;
+  if (status === "none") return <span className="text-slate-500 text-sm">—</span>;
 
   if (status === "valid")
     return (

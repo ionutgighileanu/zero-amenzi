@@ -51,11 +51,11 @@ export function VehicleDetail({
             )}
           </div>
           {vehicle.model && <p className="text-sm text-slate-500 mt-2">{vehicle.model}</p>}
-          <p className="text-xs text-slate-400 font-mono mt-1">{vehicle.vin}</p>
+          <p className="text-xs text-slate-500 font-mono mt-1">{vehicle.vin}</p>
         </div>
 
         <section>
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
             Documente obligatorii
           </h4>
           <DocLine
@@ -74,7 +74,7 @@ export function VehicleDetail({
 
         <section>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Alerte suplimentare
             </h4>
             {!adding && (
@@ -88,7 +88,7 @@ export function VehicleDetail({
             )}
           </div>
           {extra.length === 0 && !adding && (
-            <p className="text-sm text-slate-400 py-2">
+            <p className="text-sm text-slate-500 py-2">
               Extinctor, trusă medicală, revizie, CASCO, impozit auto… adaugă ce vrei să nu uiți.
             </p>
           )}

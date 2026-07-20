@@ -2,6 +2,8 @@
 
 import { MouseEvent } from "react";
 import { ChevronRight, Mail, MessageSquare, Zap } from "lucide-react";
+import { motion } from "motion/react";
+import { DURATION, EASE_OUT } from "@/lib/motion";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
 import { StatusCell } from "@/components/app/StatusCell";
@@ -26,15 +28,22 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
   };
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: DURATION.enter, ease: EASE_OUT }}
       onClick={() => onOpen(v)}
       className={`bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${vStatus === "expired" ? "border-red-300" : vStatus === "warning" ? "border-amber-300" : "border-slate-200"}`}
     >
       <div className="p-5 pb-4 flex items-start justify-between gap-3">
         <div>
           <Plate plate={v.plate} size="md" />
-          {v.model && <p className="text-xs text-slate-500 mt-2">{v.model}</p>}
-          <p className="text-[11px] text-slate-400 font-mono mt-1 tracking-wide">{v.vin}</p>
+          {v.model && (
+            <p className="text-xs font-medium text-slate-600 mt-2">{v.model}</p>
+          )}
+          <p className="text-[11px] text-slate-500 font-mono mt-0.5 tracking-wide">{v.vin}</p>
         </div>
         {vStatus === "expired" && (
           <span className="text-[10px] font-bold uppercase tracking-wide text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-1 shrink-0">
@@ -67,13 +76,13 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
         {(v.docs ?? []).length > 0 && (
           <div className="flex justify-between items-center py-2.5">
             <span className="text-sm text-slate-500">Alte documente</span>
-            <span className="text-xs text-slate-400">{v.docs!.length} adăugate</span>
+            <span className="text-xs text-slate-500">{v.docs!.length} adăugate</span>
           </div>
         )}
       </div>
 
       <div className="px-5 pt-1">
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
           Detalii, editare, ștergere <ChevronRight size={13} />
         </span>
       </div>
@@ -115,6 +124,6 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
           </button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

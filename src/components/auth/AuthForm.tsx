@@ -126,7 +126,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
               <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-slate-400">sau</span>
+              <span className="bg-white px-3 text-xs text-slate-500">sau</span>
             </div>
           </div>
           <Button variant="outline" size="sm" className="w-full" onClick={enter}>
