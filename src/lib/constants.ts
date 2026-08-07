@@ -1,5 +1,9 @@
 export const BRAND_BLUE = "#003399";
 
+/** Cookie temporar: intenția de a crea o firmă la signup, folosit dacă
+ * Supabase cere confirmare pe email înainte de a avea o sesiune activă. */
+export const PENDING_ORG_COOKIE = "ad_pending_org";
+
 export const PRESET_ALERTS = [
   "Stingător",
   "Trusă medicală",

@@ -6,33 +6,31 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, Car, Check, ChevronDown, LogOut, Plus, Shield, Truck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { BRAND_BLUE } from "@/lib/constants";
-import { MOCK_ORG } from "@/lib/vehicles";
 import { DURATION, EASE_OUT } from "@/lib/motion";
+import { signOutAction } from "@/lib/actions/auth";
 
-type Space = {
+export type Space = {
   id: string;
   name: string;
   kind: string;
   href: string;
-  icon: typeof Car;
 };
 
-// Mock până la integrarea Supabase Auth: un cont cu garaj personal + o flotă.
-const SPACES: Space[] = [
-  { id: "personal", name: "Garajul meu", kind: "Persoană fizică", href: "/app/garage", icon: Car },
-  { id: MOCK_ORG.id, name: MOCK_ORG.name, kind: "Flotă", href: `/app/fleet/${MOCK_ORG.id}`, icon: Truck },
-];
+const PERSONAL_SPACE: Space = {
+  id: "personal",
+  name: "Garajul meu",
+  kind: "Persoană fizică",
+  href: "/app/garage",
+};
 
-const MOCK_EMAIL = "andrei.popa@gmail.com";
-
-function ContextSwitcher() {
+function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  const active =
-    SPACES.find((s) => s.id !== "personal" && pathname.startsWith(s.href)) ?? SPACES[0];
-  const ActiveIcon = active.icon;
+  const spaces = [PERSONAL_SPACE, ...orgSpaces];
+  const active = spaces.find((s) => s.id !== "personal" && pathname.startsWith(s.href)) ?? spaces[0];
+  const ActiveIcon = active.id === "personal" ? Car : Truck;
 
   return (
     <div className="relative">
@@ -69,8 +67,8 @@ function ContextSwitcher() {
             <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Spațiile tale
             </p>
-            {SPACES.map((s) => {
-              const Icon = s.icon;
+            {spaces.map((s) => {
+              const Icon = s.id === "personal" ? Car : Truck;
               return (
                 <button
                   key={s.id}
@@ -95,15 +93,17 @@ function ContextSwitcher() {
               );
             })}
             <div className="border-t border-slate-100 my-1.5" />
-            <button
+            <Link
+              href="/app/organizations/new"
               role="menuitem"
+              onClick={() => setOpen(false)}
               className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-slate-500 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             >
               <span className="w-7 h-7 rounded-lg border border-dashed border-slate-300 flex items-center justify-center shrink-0">
                 <Plus size={14} />
               </span>
               <span className="text-sm font-medium">Conectează o firmă</span>
-            </button>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -111,7 +111,13 @@ function ContextSwitcher() {
   );
 }
 
-export function AppHeader({ alertCount = 0 }: { alertCount?: number }) {
+type AppHeaderProps = {
+  email: string;
+  orgSpaces: Space[];
+  alertCount?: number;
+};
+
+export function AppHeader({ email, orgSpaces, alertCount = 0 }: AppHeaderProps) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -132,7 +138,7 @@ export function AppHeader({ alertCount = 0 }: { alertCount?: number }) {
               </span>
             </Link>
             <span className="text-slate-300 hidden sm:block">/</span>
-            <ContextSwitcher />
+            <ContextSwitcher orgSpaces={orgSpaces} />
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <button
@@ -144,14 +150,16 @@ export function AppHeader({ alertCount = 0 }: { alertCount?: number }) {
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
               )}
             </button>
-            <span className="text-xs text-slate-500 hidden md:block">{MOCK_EMAIL}</span>
-            <Link
-              href="/"
-              aria-label="Ieși din cont"
-              className="p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-            >
-              <LogOut size={16} />
-            </Link>
+            <span className="text-xs text-slate-500 hidden md:block">{email}</span>
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                aria-label="Ieși din cont"
+                className="p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+              >
+                <LogOut size={16} />
+              </button>
+            </form>
           </div>
         </div>
       </div>

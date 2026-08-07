@@ -23,8 +23,8 @@ export function driverInitials(name: string): string {
 type DriverDetailProps = {
   driver: Driver;
   onUpdate: (id: string, patch: { name: string; phone: string }) => void;
-  onAddCert: (id: string, cert: DriverCert) => void;
-  onDeleteCert: (id: string, index: number) => void;
+  onAddCert: (id: string, cert: Pick<DriverCert, "type" | "expires">) => void;
+  onDeleteCert: (id: string, certId: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
 };
@@ -94,12 +94,12 @@ export function DriverDetail({
               Niciun document. Adaugă atestate ADR, avize psihologice, fișe medicale…
             </p>
           )}
-          {driver.certs.map((c, i) => (
+          {driver.certs.map((c) => (
             <DocLine
-              key={`${c.type}-${i}`}
+              key={c.id}
               label={c.type}
               date={c.expires}
-              onDelete={() => onDeleteCert(driver.id, i)}
+              onDelete={() => onDeleteCert(driver.id, c.id)}
             />
           ))}
           {adding && (

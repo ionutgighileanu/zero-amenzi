@@ -17,8 +17,8 @@ type VehicleDetailProps = {
   alertTypes: string[];
   onRca: (v: Vehicle) => void;
   onCasco: (v: Vehicle) => void;
-  onAddDoc: (id: string, doc: VehicleDoc) => void;
-  onDeleteDoc: (id: string, index: number) => void;
+  onAddDoc: (id: string, doc: Pick<VehicleDoc, "type" | "expires">) => void;
+  onDeleteDoc: (id: string, docId: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
 };
@@ -92,12 +92,12 @@ export function VehicleDetail({
               Extinctor, trusă medicală, revizie, CASCO, impozit auto… adaugă ce vrei să nu uiți.
             </p>
           )}
-          {extra.map((d, i) => (
+          {extra.map((d) => (
             <DocLine
-              key={`${d.type}-${i}`}
+              key={d.id}
               label={d.type}
               date={d.expires}
-              onDelete={() => onDeleteDoc(vehicle.id, i)}
+              onDelete={() => onDeleteDoc(vehicle.id, d.id)}
             />
           ))}
           {adding && (

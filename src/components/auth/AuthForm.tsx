@@ -1,13 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Car, Shield, Truck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Car, CheckCircle2, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { BRAND_BLUE } from "@/lib/constants";
-import { MOCK_ORG } from "@/lib/vehicles";
+import { BRAND_BLUE, PENDING_ORG_COOKIE } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
+import { signInAction, signUpAction, type AuthActionState } from "@/lib/actions/auth";
 
 type Mode = "login" | "signup";
 type Account = "B2C" | "B2B";
@@ -40,21 +41,60 @@ type AuthFormProps = {
   defaultAccount?: Account;
 };
 
+const initialState: AuthActionState = null;
+
 export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? "/app/garage";
   const [account, setAccount] = useState<Account>(defaultAccount);
+  const [orgName, setOrgName] = useState("");
+  const [cui, setCui] = useState("");
+  const [googlePending, setGooglePending] = useState(false);
 
-  // Mock până la integrarea Supabase Auth: orice submit „reușește".
-  const enter = () => {
-    router.push(
-      mode === "signup" && account === "B2B" ? `/app/fleet/${MOCK_ORG.id}` : "/app/garage"
+  const action = mode === "signup" ? signUpAction : signInAction;
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  const signInWithGoogle = async () => {
+    setGooglePending(true);
+    // Salvăm intenția de firmă înainte de redirect — /auth/callback o citește
+    // după ce Google confirmă identitatea (aceeași cheie ca la signup email).
+    if (mode === "signup" && account === "B2B" && orgName.trim()) {
+      document.cookie = `${PENDING_ORG_COOKIE}=${encodeURIComponent(
+        JSON.stringify({ name: orgName.trim(), cui: cui.trim() })
+      )}; path=/; max-age=3600; samesite=lax`;
+    }
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  };
+
+  if (state?.status === "confirm-email") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex-1 flex flex-col justify-center py-12 px-4">
+        <div className="mx-auto w-full max-w-sm text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 mb-4">
+            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+          </div>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 font-display">
+            Verifică-ți email-ul
+          </h1>
+          <p className="text-sm text-slate-600 mt-2">
+            Ți-am trimis un link de confirmare. Apasă-l ca să-ți activezi contul —
+            apoi te poți conecta.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block mt-6 text-sm font-semibold hover:underline"
+            style={{ color: BRAND_BLUE }}
+          >
+            Înapoi la conectare
+          </Link>
+        </div>
+      </div>
     );
-  };
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    enter();
-  };
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex-1 flex flex-col justify-center py-12 px-4">
@@ -105,19 +145,52 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={submit}>
+          <form className="space-y-4" action={formAction}>
+            {mode === "signup" && <input type="hidden" name="accountType" value={account} />}
+            {mode === "login" && (
+              <input type="hidden" name="redirectTo" value={redirectTo} />
+            )}
             {mode === "signup" && account === "B2B" && (
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <Input label="Nume firmă" placeholder="TransLog SRL" required />
+                  <Input
+                    label="Nume firmă"
+                    name="orgName"
+                    placeholder="TransLog SRL"
+                    required
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                  />
                 </div>
-                <Input label="CUI" placeholder="RO12345678" required />
+                <Input
+                  label="CUI"
+                  name="cui"
+                  placeholder="RO12345678"
+                  value={cui}
+                  onChange={(e) => setCui(e.target.value)}
+                />
               </div>
             )}
-            <Input label="Email" type="email" placeholder="nume@email.ro" required />
-            <Input label="Parolă" type="password" placeholder="••••••••" required />
-            <Button type="submit" size="sm" className="w-full">
-              {mode === "signup" ? "Creează cont" : "Intră în cont"}
+            <Input label="Email" name="email" type="email" placeholder="nume@email.ro" required />
+            <Input
+              label="Parolă"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              minLength={6}
+            />
+            {state?.error && (
+              <p className="text-sm text-red-600" role="alert">
+                {state.error}
+              </p>
+            )}
+            <Button type="submit" size="sm" className="w-full" disabled={pending}>
+              {pending
+                ? "Se procesează…"
+                : mode === "signup"
+                  ? "Creează cont"
+                  : "Intră în cont"}
             </Button>
           </form>
 
@@ -129,7 +202,13 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
               <span className="bg-white px-3 text-xs text-slate-500">sau</span>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={enter}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={signInWithGoogle}
+            disabled={googlePending}
+          >
             <GoogleIcon />
             {mode === "signup" ? "Înscrie-te cu Google" : "Continuă cu Google"}
           </Button>

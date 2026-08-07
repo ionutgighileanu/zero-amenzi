@@ -6,11 +6,20 @@ const UNDO_WINDOW_MS = 30_000;
 
 type SoftDeletable = { id: string; deleted_at: string | null };
 
+type Persist = {
+  /** Persistă ștergerea pe server. Dacă respinge, ștergerea locală e anulată. */
+  onDelete?: (id: string) => Promise<void>;
+  /** Persistă anularea pe server. Dacă respinge, revenim la starea ștearsă. */
+  onUndo?: (id: string) => Promise<void>;
+};
+
 /**
  * Soft-delete cu fereastră de Undo de 30s (vezi CLAUDE.md).
- * Ștergerea setează `deleted_at`; rândurile marcate sunt excluse din `visible`.
+ * Ștergerea setează `deleted_at` local (optimist) și persistă pe server;
+ * rândurile marcate sunt excluse din `visible`. Eșecul persistenței revine
+ * la starea anterioară, ca lista să nu mintă despre ce s-a salvat.
  */
-export function useSoftDelete<T extends SoftDeletable>(initial: T[]) {
+export function useSoftDelete<T extends SoftDeletable>(initial: T[], persist: Persist = {}) {
   const [items, setItems] = useState<T[]>(initial);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,6 +46,12 @@ export function useSoftDelete<T extends SoftDeletable>(initial: T[]) {
     timeoutRef.current = setTimeout(() => {
       setPendingId((current) => (current === id ? null : current));
     }, UNDO_WINDOW_MS);
+
+    persist.onDelete?.(id).catch(() => {
+      clearPendingTimeout();
+      setPendingId((current) => (current === id ? null : current));
+      setItems((prev) => prev.map((it) => (it.id === id ? { ...it, deleted_at: null } : it)));
+    });
   };
 
   const undo = (id: string) => {
@@ -45,6 +60,14 @@ export function useSoftDelete<T extends SoftDeletable>(initial: T[]) {
     setItems((prev) =>
       prev.map((it) => (it.id === id ? { ...it, deleted_at: null } : it))
     );
+
+    persist.onUndo?.(id).catch(() => {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === id ? { ...it, deleted_at: new Date().toISOString() } : it
+        )
+      );
+    });
   };
 
   const visible = items.filter((it) => it.deleted_at === null);
