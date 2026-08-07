@@ -27,9 +27,9 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
-  sm: "px-4 py-2 text-sm",
-  md: "px-5 py-2.5 text-sm",
-  lg: "px-6 py-3 text-base",
+  sm: "px-4 py-2 text-sm min-h-11",
+  md: "px-5 py-2.5 text-sm min-h-11",
+  lg: "px-6 py-3 text-base min-h-11",
 };
 
 const BASE_CLASSES =

@@ -30,7 +30,7 @@ export function Nav() {
           </span>
         </a>
 
-        <div className="hidden sm:flex items-center gap-6 text-sm">
+        <div className="hidden md:flex items-center gap-6 text-sm">
           {LINKS.map(([href, label]) => (
             <a key={href} href={href} className="text-slate-600 hover:text-slate-900">
               {label}
@@ -45,7 +45,7 @@ export function Nav() {
         </div>
 
         <button
-          className="sm:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+          className="md:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
           onClick={() => setMobileMenu(!mobileMenu)}
           aria-label="Meniu"
         >
@@ -53,7 +53,7 @@ export function Nav() {
         </button>
       </div>
       {mobileMenu && (
-        <div className="sm:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-3">
           {LINKS.map(([href, label]) => (
             <a
               key={href}
