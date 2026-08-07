@@ -36,7 +36,7 @@ function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        className="min-h-11 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -142,12 +142,12 @@ export function AppHeader({ email, orgSpaces, alertCount = 0 }: AppHeaderProps) 
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <button
-              className="relative p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+              className="relative min-h-11 min-w-11 inline-flex items-center justify-center text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
               aria-label={`Notificări: ${alertCount} alerte`}
             >
               <Bell size={17} />
               {alertCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500" />
               )}
             </button>
             <span className="text-xs text-slate-500 hidden md:block">{email}</span>
@@ -155,7 +155,7 @@ export function AppHeader({ email, orgSpaces, alertCount = 0 }: AppHeaderProps) 
               <button
                 type="submit"
                 aria-label="Ieși din cont"
-                className="p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
               >
                 <LogOut size={16} />
               </button>

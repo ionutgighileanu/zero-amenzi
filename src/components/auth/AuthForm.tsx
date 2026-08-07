@@ -136,7 +136,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
                     key={id}
                     type="button"
                     onClick={() => setAccount(id)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 ${account === id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                    className={`min-h-11 inline-flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 ${account === id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                   >
                     <Icon size={15} /> {label}
                   </button>

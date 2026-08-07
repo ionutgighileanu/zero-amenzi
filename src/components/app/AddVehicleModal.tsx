@@ -55,7 +55,7 @@ export function AddVehicleModal({ onClose, onSubmit }: AddVehicleModalProps) {
             setăm alertele. Nu introduci nicio dată manual.
           </p>
         </div>
-        <div className="pt-2 flex gap-3">
+        <div className="pt-2 flex flex-col-reverse sm:flex-row gap-3">
           <Button variant="outline" size="sm" onClick={onClose} className="flex-1">
             Anulează
           </Button>
