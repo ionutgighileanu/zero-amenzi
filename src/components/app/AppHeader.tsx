@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Car, Check, ChevronDown, LogOut, Plus, Shield, Truck } from "lucide-react";
+import { Car, Check, ChevronDown, LogOut, Plus, Shield, Truck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { BRAND_BLUE } from "@/lib/constants";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import { signOutAction } from "@/lib/actions/auth";
+import { NotificationBell } from "@/components/app/NotificationBell";
+import type { NotificationItem } from "@/lib/notifications";
 
 export type Space = {
   id: string;
@@ -114,10 +116,10 @@ function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
 type AppHeaderProps = {
   email: string;
   orgSpaces: Space[];
-  alertCount?: number;
+  notifications: NotificationItem[];
 };
 
-export function AppHeader({ email, orgSpaces, alertCount = 0 }: AppHeaderProps) {
+export function AppHeader({ email, orgSpaces, notifications }: AppHeaderProps) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -141,15 +143,7 @@ export function AppHeader({ email, orgSpaces, alertCount = 0 }: AppHeaderProps) 
             <ContextSwitcher orgSpaces={orgSpaces} />
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
-            <button
-              className="relative min-h-11 min-w-11 inline-flex items-center justify-center text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-              aria-label={`Notificări: ${alertCount} alerte`}
-            >
-              <Bell size={17} />
-              {alertCount > 0 && (
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </button>
+            <NotificationBell initialNotifications={notifications} />
             <span className="text-xs text-slate-500 hidden md:block">{email}</span>
             <form action={signOutAction}>
               <button

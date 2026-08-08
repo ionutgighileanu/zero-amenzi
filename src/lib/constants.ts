@@ -26,6 +26,13 @@ export const DEFAULT_ALERT_TYPES = [
 
 export const MAX_ALERTS = 15;
 
+/** Praguri de alertă expirare document (zile rămase). Cronul verifică
+ * exact aceste praguri o dată pe zi — vezi src/lib/cron/check-expiries.ts. */
+export const NOTIFICATION_THRESHOLDS = [30, 15, 2, 0] as const;
+
+/** Plafon zilnic de email-uri pe planul gratuit Resend (100/zi). */
+export const EMAIL_DAILY_LIMIT = 100;
+
 export type RcaOffer = { insurer: string; price: number; best: boolean };
 
 export const RCA_OFFERS: RcaOffer[] = [
