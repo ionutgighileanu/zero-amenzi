@@ -1,45 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Search, AlertTriangle } from "lucide-react";
+import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Plate } from "@/components/ui/Plate";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
 import { BRAND_BLUE } from "@/lib/constants";
-import { verifyPlate, type VerificationResult } from "@/lib/verify";
+import {
+  attachVerificationEmailAction,
+  createVerificationRequestAction,
+  type CreateVerificationState,
+} from "@/lib/actions/verification";
 
-type Status = "idle" | "loading" | "found" | "not-found" | "error";
-
-const STATUS_TONE: Record<string, string> = {
-  valid: "border-slate-200 bg-slate-50 text-emerald-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700",
-  expired: "border-red-200 bg-red-50 text-red-700",
-};
+const initialState: CreateVerificationState = { status: "idle" };
 
 export function VerificationForm() {
-  const [plate, setPlate] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [result, setResult] = useState<VerificationResult | null>(null);
+  const [state, formAction, pending] = useActionState(createVerificationRequestAction, initialState);
+  const [dismissed, setDismissed] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (plate.trim().length < 2) return;
-
-    setStatus("loading");
-    setResult(null);
-
-    try {
-      const data = await verifyPlate(plate);
-      setResult(data);
-      setStatus("found");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      setStatus(message === "NOT_FOUND" ? "not-found" : "error");
-    }
-  };
+  const showModal = state.status === "created" && !dismissed;
 
   return (
     <div className="max-w-md">
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form action={formAction} className="flex gap-2" onSubmit={() => setDismissed(false)}>
         <div className="flex-1 relative">
           <div
             className="absolute left-0 top-0 bottom-0 w-8 rounded-l-xl flex items-center justify-center text-white text-[9px] font-bold"
@@ -51,79 +35,89 @@ export function VerificationForm() {
             </div>
           </div>
           <input
-            value={plate}
-            onChange={(e) => {
-              setPlate(e.target.value.toUpperCase());
-              setStatus("idle");
-              setResult(null);
-            }}
+            name="plate"
             placeholder="B 100 ABC"
-            disabled={status === "loading"}
+            disabled={pending}
+            style={{ textTransform: "uppercase" }}
             className="w-full border border-slate-300 rounded-xl pl-11 pr-3 py-3 text-base font-bold tracking-wider text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-blue-700 disabled:bg-slate-50 font-display"
             required
           />
         </div>
-        <Button type="submit" size="lg" disabled={status === "loading"}>
-          {status === "loading" ? (
-            <Loader2 size={18} className="mr-2 animate-spin" />
-          ) : (
-            <Search size={18} className="mr-2" />
-          )}
-          Verifică
+        <Button type="submit" size="lg" disabled={pending}>
+          <Search size={18} className="mr-2" />
+          {pending ? "Se trimite…" : "Verifică"}
         </Button>
       </form>
 
-      {status === "loading" && (
-        <p className="text-sm text-slate-500 mt-3" role="status" aria-live="polite">
-          Verific actele...
-        </p>
-      )}
-
-      {status === "not-found" && (
-        <div
-          className="mt-4 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"
-          role="alert"
-        >
-          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          <span>
-            Nu am găsit numărul <strong>{plate.trim().toUpperCase()}</strong> — verifică
-            dacă e corect.
-          </span>
-        </div>
-      )}
-
-      {status === "error" && (
+      {state.status === "error" && (
         <div
           className="mt-4 flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"
           role="alert"
         >
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          <span>Eroare la verificare. Încearcă din nou.</span>
+          <span>{state.error}</span>
         </div>
       )}
 
-      {status === "found" && result && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-5 mt-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <Plate plate={result.plate} size="md" />
-            <span className="text-sm text-slate-500">{result.vehicle}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {(["itp", "rca", "rovinieta"] as const).map((key) => (
-              <div
-                key={key}
-                className={`rounded-xl border p-3 ${STATUS_TONE[result[key].status]}`}
-              >
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  {key === "rovinieta" ? "Rovinietă" : key.toUpperCase()}
-                </p>
-                <p className="text-sm font-bold">{result[key].label}</p>
-              </div>
-            ))}
-          </div>
-          <Button className="w-full">Creează cont și activează alertele</Button>
-        </div>
+      {showModal && state.status === "created" && (
+        <VerificationStartedModal
+          plate={state.plate}
+          token={state.token}
+          onClose={() => setDismissed(true)}
+        />
       )}
     </div>
+  );
+}
+
+function VerificationStartedModal({
+  plate,
+  token,
+  onClose,
+}: {
+  plate: string;
+  token: string;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [navigating, setNavigating] = useState(false);
+
+  const openProgress = async () => {
+    setNavigating(true);
+    if (email.trim()) {
+      await attachVerificationEmailAction(token, email);
+    }
+    router.push(`/verificare/${token}`);
+  };
+
+  return (
+    <Modal onClose={onClose} title="Verificarea a pornit">
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">
+          Verificăm actele pentru <strong>{plate}</strong>. Îți trimitem rezultatul pe email
+          de îndată ce e gata.
+        </p>
+        <Input
+          label="Email"
+          type="email"
+          placeholder="email@exemplu.ro (opțional)"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={navigating}
+        />
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
+          <Button variant="outline" size="sm" onClick={onClose} className="flex-1" disabled={navigating}>
+            Închide
+          </Button>
+          <Button size="sm" className="flex-1" onClick={openProgress} disabled={navigating}>
+            {navigating ? "Se deschide…" : "Deschide pagina de progres"}
+          </Button>
+        </div>
+        <p className="text-xs text-slate-500">
+          Salvează linkul dacă nu lași email — e singurul mod să revii la rezultat.
+        </p>
+      </div>
+    </Modal>
   );
 }

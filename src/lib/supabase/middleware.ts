@@ -1,11 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIX = "/app";
+const PROTECTED_PREFIXES = ["/app", "/admin"];
 
 /**
  * Reîmprospătează sesiunea Supabase la fiecare request (necesar în App Router,
- * Server Components nu pot scrie cookies) și protejează rutele /app/*.
+ * Server Components nu pot scrie cookies) și protejează rutele /app/* și
+ * /admin/* — doar barieră de „ai nevoie de o sesiune"; verificarea exactă a
+ * email-ului de admin se face în src/app/admin/verifications/page.tsx.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,7 +33,8 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
 
-  if (!data.user && request.nextUrl.pathname.startsWith(PROTECTED_PREFIX)) {
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
+  if (!data.user && isProtected) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);

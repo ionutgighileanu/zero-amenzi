@@ -79,8 +79,8 @@ export default function Home() {
               <span style={{ color: BRAND_BLUE }}>pentru acte expirate.</span>
             </h1>
             <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-lg">
-              Verifică instant ITP-ul, RCA-ul și rovinieta. Primești alerte înainte de
-              expirare. Pentru mașina personală sau pentru toată flota.
+              Introdu numărul de înmatriculare. Îți spunem ce acte au expirat —
+              ITP, RCA, rovinietă. Pentru mașina personală sau pentru toată flota.
             </p>
             <div className="mt-8">
               <VerificationForm />

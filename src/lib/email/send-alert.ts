@@ -1,14 +1,5 @@
-import { Resend } from "resend";
 import { BRAND_BLUE } from "@/lib/constants";
-
-let client: Resend | null = null;
-
-function getClient(): Resend | null {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return null;
-  if (!client) client = new Resend(key);
-  return client;
-}
+import { getResendClient } from "@/lib/email/client";
 
 export type AlertEmailParams = {
   to: string;
@@ -79,7 +70,7 @@ function buildHtml(params: AlertEmailParams): string {
  * notificării in-app, care rămâne sursa de adevăr indiferent de email.
  */
 export async function sendAlertEmail(params: AlertEmailParams): Promise<boolean> {
-  const resend = getClient();
+  const resend = getResendClient();
   if (!resend) {
     console.warn("RESEND_API_KEY nesetat — email-ul de alertă nu a fost trimis.");
     return false;

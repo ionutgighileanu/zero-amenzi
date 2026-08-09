@@ -33,6 +33,20 @@ export const NOTIFICATION_THRESHOLDS = [30, 15, 2, 0] as const;
 /** Plafon zilnic de email-uri pe planul gratuit Resend (100/zi). */
 export const EMAIL_DAILY_LIMIT = 100;
 
+/** Singurul cont care poate completa cererile de verificare publică
+ * (wizard-of-oz, D-010). Hardcodat pentru MVP — vezi migrarea
+ * verification_requests, unde e oglindit în RLS. */
+export const ADMIN_EMAIL = "ionut.gighileanu@gmail.com";
+
+/** Tri-state pe care adminul îl atribuie fiecărui document verificat. */
+export const VERIFICATION_RESULT_OPTIONS = [
+  { value: "valid", label: "Valid" },
+  { value: "expirat", label: "Expirat" },
+  { value: "nu_gasit", label: "Nu am găsit" },
+] as const;
+
+export type VerificationResultValue = (typeof VERIFICATION_RESULT_OPTIONS)[number]["value"];
+
 export type RcaOffer = { insurer: string; price: number; best: boolean };
 
 export const RCA_OFFERS: RcaOffer[] = [

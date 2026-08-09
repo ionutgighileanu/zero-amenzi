@@ -249,9 +249,62 @@ export type Database = {
         };
         Relationships: [];
       };
+      verification_requests: {
+        Row: {
+          id: string;
+          plate_number: string;
+          email: string | null;
+          status: "pending" | "completed";
+          result_itp: "valid" | "expirat" | "nu_gasit" | null;
+          result_rca: "valid" | "expirat" | "nu_gasit" | null;
+          result_rovinieta: "valid" | "expirat" | "nu_gasit" | null;
+          result_itp_expires: string | null;
+          result_rca_expires: string | null;
+          result_rovinieta_expires: string | null;
+          created_at: string;
+          completed_at: string | null;
+          token: string;
+        };
+        Insert: {
+          id?: string;
+          plate_number: string;
+          email?: string | null;
+          status?: "pending" | "completed";
+          result_itp?: "valid" | "expirat" | "nu_gasit" | null;
+          result_rca?: "valid" | "expirat" | "nu_gasit" | null;
+          result_rovinieta?: "valid" | "expirat" | "nu_gasit" | null;
+          result_itp_expires?: string | null;
+          result_rca_expires?: string | null;
+          result_rovinieta_expires?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+          token?: string;
+        };
+        Update: {
+          id?: string;
+          plate_number?: string;
+          email?: string | null;
+          status?: "pending" | "completed";
+          result_itp?: "valid" | "expirat" | "nu_gasit" | null;
+          result_rca?: "valid" | "expirat" | "nu_gasit" | null;
+          result_rovinieta?: "valid" | "expirat" | "nu_gasit" | null;
+          result_itp_expires?: string | null;
+          result_rca_expires?: string | null;
+          result_rovinieta_expires?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+          token?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      attach_verification_email: {
+        Args: { p_token: string; p_email: string };
+        Returns: null;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
