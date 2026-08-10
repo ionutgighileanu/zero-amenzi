@@ -8,7 +8,6 @@ import { Plate } from "@/components/ui/Plate";
 import { DocLine } from "@/components/app/DocLine";
 import { AddDocForm } from "@/components/app/AddDocForm";
 import { DeleteConfirm } from "@/components/app/DeleteConfirm";
-import { BRAND_BLUE } from "@/lib/constants";
 import type { Vehicle, VehicleDoc } from "@/lib/vehicles";
 
 type VehicleDetailProps = {
@@ -80,8 +79,7 @@ export function VehicleDetail({
             {!adding && (
               <button
                 onClick={() => setAdding(true)}
-                className="text-sm font-semibold inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
-                style={{ color: BRAND_BLUE }}
+                className="text-sm font-semibold text-brand inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
               >
                 <Plus size={14} /> Adaugă
               </button>

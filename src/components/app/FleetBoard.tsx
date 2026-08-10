@@ -29,7 +29,6 @@ import { UndoBanner } from "@/components/app/UndoBanner";
 import { useSoftDelete } from "@/hooks/useSoftDelete";
 import { daysUntil, getStatus } from "@/lib/status";
 import { DURATION } from "@/lib/motion";
-import { BRAND_BLUE } from "@/lib/constants";
 import { minDays, vehicleStatus, type Driver, type Vehicle } from "@/lib/vehicles";
 import {
   addVehicleAction,
@@ -545,10 +544,7 @@ export function FleetBoard({
                       >
                         <td className="px-4 py-3.5 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <span
-                              className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                              style={{ backgroundColor: BRAND_BLUE }}
-                            >
+                            <span className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-xs font-bold text-white shrink-0">
                               {driverInitials(d.name)}
                             </span>
                             <span className="text-sm font-semibold text-slate-900">{d.name}</span>

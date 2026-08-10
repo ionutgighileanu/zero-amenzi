@@ -1,5 +1,3 @@
-import { BRAND_BLUE } from "@/lib/constants";
-
 type Size = "sm" | "md" | "lg";
 
 const SIZE_CLASSES: Record<Size, { band: string; text: string; star: string }> = {
@@ -13,8 +11,7 @@ export function Plate({ plate, size = "md" }: { plate: string; size?: Size }) {
   return (
     <span className="inline-flex items-stretch rounded-md overflow-hidden border border-slate-300 shadow-sm select-none shrink-0 font-display">
       <span
-        className={`${s.band} flex flex-col items-center justify-center text-white font-bold leading-none gap-0.5`}
-        style={{ backgroundColor: BRAND_BLUE }}
+        className={`${s.band} bg-brand flex flex-col items-center justify-center text-white font-bold leading-none gap-0.5`}
       >
         <span className={s.star} aria-hidden>
           ★

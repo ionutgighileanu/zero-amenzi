@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Shield, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { BRAND_BLUE } from "@/lib/constants";
 
 const LINKS: [string, string][] = [
   ["#cum-functioneaza", "Cum funcționează"],
@@ -19,10 +18,7 @@ export function Nav() {
     <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 flex justify-between items-center h-14">
         <a href="#" className="flex items-center gap-2">
-          <span
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: BRAND_BLUE }}
-          >
+          <span className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center">
             <Shield className="text-white" size={17} />
           </span>
           <span className="text-lg font-extrabold tracking-tight font-display">

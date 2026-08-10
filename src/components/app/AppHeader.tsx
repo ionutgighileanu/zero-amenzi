@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Car, Check, ChevronDown, LogOut, Plus, Shield, Truck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { BRAND_BLUE } from "@/lib/constants";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import { signOutAction } from "@/lib/actions/auth";
 import { NotificationBell } from "@/components/app/NotificationBell";
@@ -129,10 +128,7 @@ export function AppHeader({ email, orgSpaces, notifications }: AppHeaderProps) {
               href="/app"
               className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg"
             >
-              <span
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: BRAND_BLUE }}
-              >
+              <span className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center shrink-0">
                 <Shield className="text-white" size={15} />
               </span>
               <span className="font-extrabold text-lg tracking-tight hidden sm:block font-display">

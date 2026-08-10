@@ -9,7 +9,6 @@ import { Plate } from "@/components/ui/Plate";
 import { StatusCell } from "@/components/app/StatusCell";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
-import { BRAND_BLUE } from "@/lib/constants";
 
 type VehicleCardProps = {
   vehicle: Vehicle;
@@ -103,10 +102,7 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
 
       {/* Free vs Premium — diferența e explicită, nu doar un badge */}
       {v.isPremium ? (
-        <div
-          className="px-5 py-3 border-t border-blue-100 bg-blue-50/60 flex items-center gap-2 text-xs font-medium"
-          style={{ color: BRAND_BLUE }}
-        >
+        <div className="px-5 py-3 border-t border-blue-100 bg-blue-50/60 flex items-center gap-2 text-xs font-medium text-brand">
           <Zap size={13} /> Premium · sincronizare lunară automată
           <span className="ml-auto flex items-center gap-1 text-blue-700/70">
             <MessageSquare size={12} /> SMS
@@ -117,8 +113,7 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
           <Mail size={13} /> Free · verificare unică, alerte email
           <button
             onClick={(e) => e.stopPropagation()}
-            className="ml-auto font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
-            style={{ color: BRAND_BLUE }}
+            className="ml-auto font-semibold text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
           >
             Premium · 15 lei/an
           </button>

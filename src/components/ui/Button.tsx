@@ -1,6 +1,5 @@
 import { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
-import { BRAND_BLUE } from "@/lib/constants";
 
 type Variant = "primary" | "outline" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
@@ -19,7 +18,7 @@ type AnchorProps = CommonProps &
   AnchorHTMLAttributes<HTMLAnchorElement> & { href: string };
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: "text-white hover:opacity-90",
+  primary: "bg-brand text-white hover:opacity-90",
   outline:
     "bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
@@ -38,7 +37,6 @@ const BASE_CLASSES =
 export function Button(props: ButtonProps | AnchorProps) {
   const { children, variant = "primary", size = "md", className = "", ...rest } = props;
   const classes = `${BASE_CLASSES} ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
-  const style = variant === "primary" ? { backgroundColor: BRAND_BLUE } : undefined;
 
   if ("href" in props && props.href) {
     const anchorProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
@@ -46,13 +44,13 @@ export function Button(props: ButtonProps | AnchorProps) {
     // linkurile externe rămân <a> simplu.
     if (props.href.startsWith("/")) {
       return (
-        <Link {...anchorProps} href={props.href} style={style} className={classes}>
+        <Link {...anchorProps} href={props.href} className={classes}>
           {children}
         </Link>
       );
     }
     return (
-      <a {...anchorProps} href={props.href} style={style} className={classes}>
+      <a {...anchorProps} href={props.href} className={classes}>
         {children}
       </a>
     );
@@ -60,7 +58,7 @@ export function Button(props: ButtonProps | AnchorProps) {
 
   const buttonProps = rest as ButtonHTMLAttributes<HTMLButtonElement>;
   return (
-    <button {...buttonProps} style={style} className={classes}>
+    <button {...buttonProps} className={classes}>
       {children}
     </button>
   );

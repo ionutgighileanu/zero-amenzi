@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Car, CheckCircle2, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { BRAND_BLUE, PENDING_ORG_COOKIE } from "@/lib/constants";
+import { PENDING_ORG_COOKIE } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { signInAction, signUpAction, type AuthActionState } from "@/lib/actions/auth";
 
@@ -86,8 +86,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
           </p>
           <Link
             href="/login"
-            className="inline-block mt-6 text-sm font-semibold hover:underline"
-            style={{ color: BRAND_BLUE }}
+            className="inline-block mt-6 text-sm font-semibold text-brand hover:underline"
           >
             Înapoi la conectare
           </Link>
@@ -103,10 +102,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
           href="/"
           className="flex items-center justify-center gap-2.5 mb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg"
         >
-          <span
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: BRAND_BLUE }}
-          >
+          <span className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center">
             <Shield className="text-white" size={22} />
           </span>
           <span className="text-2xl font-extrabold tracking-tight text-slate-900 font-display">
@@ -218,8 +214,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
           {mode === "signup" ? "Ai deja cont?" : "Nu ai cont încă?"}{" "}
           <Link
             href={mode === "signup" ? "/login" : "/signup"}
-            className="font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
-            style={{ color: BRAND_BLUE }}
+            className="font-semibold text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
           >
             {mode === "signup" ? "Autentifică-te" : "Creează unul"}
           </Link>

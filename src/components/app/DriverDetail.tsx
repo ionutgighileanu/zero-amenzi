@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { DocLine } from "@/components/app/DocLine";
 import { AddDocForm } from "@/components/app/AddDocForm";
 import { DeleteConfirm } from "@/components/app/DeleteConfirm";
-import { BRAND_BLUE } from "@/lib/constants";
 import type { Driver, DriverCert } from "@/lib/vehicles";
 
 const CERT_PRESETS = ["Atestat ADR", "Atestat marfă", "Aviz psihologic", "Fișă medicală", "Altul"];
@@ -46,10 +45,7 @@ export function DriverDetail({
     <Modal onClose={onClose} title="Detalii șofer">
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <span
-            className="h-11 w-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ backgroundColor: BRAND_BLUE }}
-          >
+          <span className="h-11 w-11 rounded-full bg-brand flex items-center justify-center text-sm font-bold text-white shrink-0">
             {driverInitials(driver.name)}
           </span>
           <div className="min-w-0">
@@ -82,8 +78,7 @@ export function DriverDetail({
             {!adding && (
               <button
                 onClick={() => setAdding(true)}
-                className="text-sm font-semibold inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
-                style={{ color: BRAND_BLUE }}
+                className="text-sm font-semibold text-brand inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
               >
                 <Plus size={14} /> Adaugă
               </button>

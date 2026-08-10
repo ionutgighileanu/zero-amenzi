@@ -18,7 +18,6 @@ import { Plate } from "@/components/ui/Plate";
 import { VerificationForm } from "@/components/VerificationForm";
 import { Nav } from "@/components/landing/Nav";
 import { Faq } from "@/components/landing/Faq";
-import { BRAND_BLUE } from "@/lib/constants";
 
 function Section({
   children,
@@ -38,7 +37,7 @@ function Section({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: BRAND_BLUE }}>
+    <p className="text-xs font-bold uppercase tracking-widest text-brand mb-3">
       {children}
     </p>
   );
@@ -76,7 +75,7 @@ export default function Home() {
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-[1.1] font-display">
               Nu mai lua amenzi
               <br />
-              <span style={{ color: BRAND_BLUE }}>pentru acte expirate.</span>
+              <span className="text-brand">pentru acte expirate.</span>
             </h1>
             <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-lg">
               Introdu numărul de înmatriculare. Îți spunem ce acte au expirat —
@@ -124,11 +123,8 @@ export default function Home() {
             ] as const
           ).map(([Icon, title, desc], i) => (
             <div key={i} className="flex flex-col">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                style={{ backgroundColor: `${BRAND_BLUE}0D` }}
-              >
-                <Icon size={20} style={{ color: BRAND_BLUE }} />
+              <div className="w-11 h-11 rounded-xl bg-brand/5 flex items-center justify-center mb-4">
+                <Icon size={20} className="text-brand" />
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-1.5 font-display">{title}</h3>
               <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
@@ -307,14 +303,8 @@ export default function Home() {
           </div>
 
           {/* PRO */}
-          <div
-            className="rounded-2xl border-2 p-6 flex flex-col relative sm:-mt-4 shadow-xl"
-            style={{ borderColor: BRAND_BLUE }}
-          >
-            <span
-              className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-white rounded-full px-3 py-1 whitespace-nowrap"
-              style={{ backgroundColor: BRAND_BLUE }}
-            >
+          <div className="rounded-2xl border-2 border-brand p-6 flex flex-col relative sm:-mt-4 shadow-xl">
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-white bg-brand rounded-full px-3 py-1 whitespace-nowrap">
               Recomandat
             </span>
             <div>
@@ -324,7 +314,7 @@ export default function Home() {
               </span>
             </div>
             <p className="text-base font-bold text-slate-900 mt-2">PRO</p>
-            <p className="text-sm mt-1" style={{ color: BRAND_BLUE }}>
+            <p className="text-sm text-brand mt-1">
               Gratuit cu RCA cumpărat prin noi.
             </p>
             <div className="border-t border-slate-200 my-5" />
@@ -340,7 +330,7 @@ export default function Home() {
                 ] as const
               ).map(([Icon, label]) => (
                 <li key={label} className="flex items-center gap-2.5">
-                  <Icon size={15} className="shrink-0" style={{ color: BRAND_BLUE }} />
+                  <Icon size={15} className="shrink-0 text-brand" />
                   {label}
                 </li>
               ))}
@@ -422,10 +412,7 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-3">
-                <span
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: BRAND_BLUE }}
-                >
+                <span className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
                   <Shield className="text-white" size={14} />
                 </span>
                 <span className="font-extrabold text-sm font-display">AutoDocs</span>

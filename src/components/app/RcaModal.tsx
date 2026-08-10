@@ -5,7 +5,7 @@ import { CheckCircle2, ChevronRight } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
-import { BRAND_BLUE, RCA_OFFERS, type RcaOffer } from "@/lib/constants";
+import { RCA_OFFERS, type RcaOffer } from "@/lib/constants";
 import type { Vehicle } from "@/lib/vehicles";
 
 type RcaModalProps = {
@@ -54,10 +54,7 @@ export function RcaModal({ vehicle, onClose }: RcaModalProps) {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-900">{o.insurer}</span>
                     {o.best && (
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-wide text-white rounded px-1.5 py-0.5"
-                        style={{ backgroundColor: BRAND_BLUE }}
-                      >
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-white bg-brand rounded px-1.5 py-0.5">
                         Cel mai bun preț
                       </span>
                     )}

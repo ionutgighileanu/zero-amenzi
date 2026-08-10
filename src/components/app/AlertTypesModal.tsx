@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bell, Check, Plus } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { BRAND_BLUE, MAX_ALERTS, PRESET_ALERTS } from "@/lib/constants";
+import { MAX_ALERTS, PRESET_ALERTS } from "@/lib/constants";
 
 type AlertTypesModalProps = {
   selected: string[];
@@ -81,10 +81,7 @@ export function AlertTypesModal({ selected, onSave, onClose }: AlertTypesModalPr
         </label>
       </div>
 
-      <div
-        className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold rounded-lg py-2 bg-blue-50"
-        style={{ color: BRAND_BLUE }}
-      >
+      <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold rounded-lg py-2 bg-blue-50 text-brand">
         <Bell size={14} /> {local.length} / {MAX_ALERTS} alerte selectate
       </div>
 

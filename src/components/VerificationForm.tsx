@@ -6,7 +6,6 @@ import { Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
-import { BRAND_BLUE } from "@/lib/constants";
 import {
   attachVerificationEmailAction,
   createVerificationRequestAction,
@@ -25,10 +24,7 @@ export function VerificationForm() {
     <div className="max-w-md">
       <form action={formAction} className="flex gap-2" onSubmit={() => setDismissed(false)}>
         <div className="flex-1 relative">
-          <div
-            className="absolute left-0 top-0 bottom-0 w-8 rounded-l-xl flex items-center justify-center text-white text-[9px] font-bold"
-            style={{ backgroundColor: BRAND_BLUE }}
-          >
+          <div className="absolute left-0 top-0 bottom-0 w-8 rounded-l-xl bg-brand flex items-center justify-center text-white text-[9px] font-bold">
             <div className="flex flex-col items-center leading-none gap-0.5">
               <span className="text-[6px]">★</span>
               <span>RO</span>
