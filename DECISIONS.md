@@ -50,3 +50,22 @@ Decizie: (B) — modal + link + email opțional + pagină progres cu tranziție 
 De ce: Onestitatea („durează sub 24h") plus continuitatea vizuală (aceeași pagină, doar stări diferite) plus multiplele canale de revenire dă utilizatorului control. Spinnerele care devin semafor sunt satisfăcătoare vizual — momentul e recompensă, nu doar informație. Refuzăm progresul fake pentru că insultă inteligența utilizatorului.
 
 Aș reveni dacă: Feedback real arată că utilizatorii preferă doar email, sau că modal-ul e ignorat.
+
+## D-012 · 2026-08 · PWA: Minimal offline, fără Web Push în Faza 2
+
+Context: Aplicația trebuie să fie instalabilă pe telefon (Android/iOS) fără App Store/Play Store. Trei decizii de scoping luate simultan.
+
+Opțiuni considerate pentru offline support:
+(A) Minimal — doar JS/CSS/fonts cached, paginile cer internet
+(B) Dashboard cached — utilizatorul vede ultima stare a vehiculelor offline
+(C) Full offline — tot ce e posibil cached
+
+Decizie: (A) Minimal.
+
+De ce: Dashboard cached adaugă complexitate tehnică reală (Server Components nu se cacheaza trivial în Next.js App Router, Supabase Auth în Service Worker necesită handling special, cache invalidation la CRUD) fără beneficiu proporțional la MVP. Utilizatorii primari nu sunt în zone fără internet. Date stale în cache pot crea confuzie (ITP „valid" din cache când e de fapt expirat).
+
+Aș reveni dacă: Utilizatori reali cer explicit offline — atunci implementez în Faza 4 cu strategie NetworkFirst + indicator vizual clar „Date din [timestamp]".
+
+Decizie tehnică notabilă: proiectul rulează pe Next 16 cu Turbopack, iar @serwist/next se bazează pe hooks webpack. Soluție: build de producție cu --webpack, development rămâne pe Turbopack. SW generat și verificat în producție.
+
+Web Push amânat pentru imediat după PWA de bază — canalele email + in-app sunt suficiente pentru primii utilizatori.

@@ -56,6 +56,11 @@ multor flote ("Identity + Spaces" — vezi CLAUDE.md).
 - Notificări in-app + email pentru documente care expiră (cron zilnic) — **făcut**
 - **Verificare publică a unui număr de înmatriculare, fără cont** — motorul
   de achiziție organică al produsului; vezi §5.1 pentru fluxul complet.
+- **PWA instalabil** — manifest.json cu iconițe ZA pe #003399, service worker
+  serwist cu CacheFirst pe assets statice și NetworkFirst cu fallback offline
+  pe /app/*, banner de instalare discret pe landing + post-login (dismiss
+  persistent în localStorage), dezactivat în development ca să nu interfereze
+  cu HMR. Web Push exclus din Faza 2 — vezi D-012. — **făcut**
 
 ## 5.1 UX Flow — Verificare publică (P0)
 
@@ -127,7 +132,8 @@ Stare invalidă:
 
 ### Could-Have (P2)
 
-- PWA + Web Push
+- Web Push (canalele email + in-app sunt suficiente pentru primii
+  utilizatori — vezi D-012)
 - SMS pentru alerte PRO
 - Stare de citire per-membru pe notificările de flotă (în prezent e
   partajată la nivel de organizație — simplificare MVP)
