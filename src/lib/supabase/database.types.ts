@@ -7,9 +7,19 @@ export type Database = {
   public: {
     Tables: {
       users: {
-        Row: { id: string; email: string; created_at: string };
-        Insert: { id: string; email: string; created_at?: string };
-        Update: { id?: string; email?: string; created_at?: string };
+        Row: { id: string; email: string; created_at: string; email_notifications: boolean };
+        Insert: {
+          id: string;
+          email: string;
+          created_at?: string;
+          email_notifications?: boolean;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          created_at?: string;
+          email_notifications?: boolean;
+        };
         Relationships: [];
       };
       organizations: {
@@ -214,6 +224,9 @@ export type Database = {
           sent_at: string;
           read_at: string | null;
           email_sent_at: string | null;
+          push_sent_at: string | null;
+          push_clicked_at: string | null;
+          push_dismissed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -230,6 +243,9 @@ export type Database = {
           sent_at?: string;
           read_at?: string | null;
           email_sent_at?: string | null;
+          push_sent_at?: string | null;
+          push_clicked_at?: string | null;
+          push_dismissed_at?: string | null;
         };
         Update: {
           id?: string;
@@ -246,6 +262,36 @@ export type Database = {
           sent_at?: string;
           read_at?: string | null;
           email_sent_at?: string | null;
+          push_sent_at?: string | null;
+          push_clicked_at?: string | null;
+          push_dismissed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

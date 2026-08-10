@@ -69,3 +69,28 @@ Aș reveni dacă: Utilizatori reali cer explicit offline — atunci implementez 
 Decizie tehnică notabilă: proiectul rulează pe Next 16 cu Turbopack, iar @serwist/next se bazează pe hooks webpack. Soluție: build de producție cu --webpack, development rămâne pe Turbopack. SW generat și verificat în producție.
 
 Web Push amânat pentru imediat după PWA de bază — canalele email + in-app sunt suficiente pentru primii utilizatori.
+
+## D-013 · 2026-08 · Web Push: canal suplimentar, nu înlocuitor email
+
+Context: PWA instalabil e gata (D-012). Web Push permite notificări pe ecran
+chiar dacă aplicația e închisă — al treilea canal după in-app și email.
+
+Opțiuni considerate:
+(A) Push înlocuiește email — un singur canal activ, cel ales de utilizator
+(B) Push e canal suplimentar — email rămâne activ by default, push e bonus
+(C) Push cu confirmare de citire oprește email-ul automat
+
+Decizie: (B) — push suplimentar, email neatins.
+
+De ce: Push e efemer (dismiss = dispare pentru totdeauna), poate fi suprimat
+de OS, și iOS îl suportă doar prin PWA instalat. Email-ul creează paper trail
+(„ți-am trimis alertă pe 15 iulie"). Dacă un utilizator ia amendă pentru că
+push-ul a fost suprimat și email-ul era dezactivat, riscul reputațional e real.
+Trei canale simultane (in-app permanent, email by default, push opțional) e
+strategia cea mai sigură.
+
+Tracking implementat: push_sent_at, push_clicked_at, push_dismissed_at
+în notifications_log — pentru analytics, nu pentru a tăia email-uri.
+
+Aș reveni dacă: Datele arată că >80% din push-uri sunt clicked și email-urile
+duplicate deranjează utilizatorii — atunci varianta (C) devine candidat.

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppHeader, type Space } from "@/components/app/AppHeader";
 import { MotionProvider } from "@/components/MotionProvider";
 import { InstallBanner } from "@/components/ui/InstallBanner";
+import { PushOnboarding } from "@/components/app/PushOnboarding";
 import { createClient } from "@/lib/supabase/server";
 import type { NotificationItem } from "@/lib/notifications";
 
@@ -39,6 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppHeader email={auth.user.email ?? ""} orgSpaces={orgSpaces} notifications={notifications} />
         {children}
         <InstallBanner />
+        <PushOnboarding />
       </div>
     </MotionProvider>
   );

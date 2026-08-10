@@ -1,6 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendAlertEmail } from "@/lib/email/send-alert";
+import { sendPushAlert } from "@/lib/push/send-alert";
 import { NOTIFICATION_THRESHOLDS, EMAIL_DAILY_LIMIT } from "@/lib/constants";
+import type { Database } from "@/lib/supabase/database.types";
+
+type PushSubscriptionRow = Database["public"]["Tables"]["push_subscriptions"]["Row"];
 
 function todayUTC(): Date {
   const now = new Date();
@@ -213,39 +217,77 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
 
   const recipientIds = [...new Set(fresh.map(recipientUserId).filter((id): id is string => !!id))];
   const { data: userRows } = recipientIds.length
-    ? await supabase.from("users").select("id, email").in("id", recipientIds)
+    ? await supabase.from("users").select("id, email, email_notifications").in("id", recipientIds)
     : { data: [] };
-  const emailByUserId = new Map((userRows ?? []).map((u) => [u.id, u.email]));
+  const userById = new Map((userRows ?? []).map((u) => [u.id, u]));
+
+  // Abonamente push active ale destinatarilor — interogate o singură dată,
+  // reutilizate mai jos (un user poate avea mai multe, ex. telefon + laptop).
+  const { data: subRows } = recipientIds.length
+    ? await supabase.from("push_subscriptions").select("*").in("user_id", recipientIds)
+    : { data: [] as PushSubscriptionRow[] };
+  const subsByUserId = new Map<string, PushSubscriptionRow[]>();
+  for (const s of subRows ?? []) {
+    const list = subsByUserId.get(s.user_id) ?? [];
+    list.push(s);
+    subsByUserId.set(s.user_id, list);
+  }
 
   for (let i = 0; i < fresh.length; i++) {
     const c = fresh[i];
     const insertedRow = inserted[i];
-    const to = emailByUserId.get(recipientUserId(c) ?? "");
-    if (!to) continue;
+    const uid = recipientUserId(c);
+    const recipient = uid ? userById.get(uid) : undefined;
+    const subjectLabel = c.kind === "vehicle" ? c.plate : c.driverName;
+    const path = c.orgId ? `/app/fleet/${c.orgId}` : "/app/garage";
 
-    if (emailBudget <= 0) {
-      emailsSkippedCap++;
-      continue;
+    // --- Email — respectă preferința users.email_notifications (D-013: ---
+    // push e canal suplimentar, nu înlocuiește email-ul; dezactivarea e
+    // explicită per user, nu implicită).
+    if (recipient?.email && recipient.email_notifications) {
+      if (emailBudget <= 0) {
+        emailsSkippedCap++;
+      } else {
+        const ok = await sendAlertEmail({
+          to: recipient.email,
+          docType: c.docType,
+          subjectLabel,
+          daysBefore: c.daysBefore,
+          expiresAt: c.expiresAt,
+          appUrl: `${appUrl}${path}`,
+        });
+        emailBudget--;
+        if (ok) {
+          emailsSent++;
+          await supabase
+            .from("notifications_log")
+            .update({ email_sent_at: new Date().toISOString() })
+            .eq("id", insertedRow.id);
+        }
+      }
     }
 
-    const subjectLabel = c.kind === "vehicle" ? c.plate : c.driverName;
-    const href = c.orgId ? `${appUrl}/app/fleet/${c.orgId}` : `${appUrl}/app/garage`;
-
-    const ok = await sendAlertEmail({
-      to,
-      docType: c.docType,
-      subjectLabel,
-      daysBefore: c.daysBefore,
-      expiresAt: c.expiresAt,
-      appUrl: href,
-    });
-
-    emailBudget--;
-    if (ok) {
-      emailsSent++;
+    // --- Push — fără plafon (spre deosebire de email, Web Push e gratuit) ---
+    const subs = uid ? (subsByUserId.get(uid) ?? []) : [];
+    let anyPushSent = false;
+    for (const sub of subs) {
+      const result = await sendPushAlert({
+        subscription: { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+        docType: c.docType,
+        subjectLabel,
+        daysBefore: c.daysBefore,
+        url: path,
+        notificationId: insertedRow.id,
+      });
+      if (result.ok) anyPushSent = true;
+      if (result.gone) {
+        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+      }
+    }
+    if (anyPushSent) {
       await supabase
         .from("notifications_log")
-        .update({ email_sent_at: new Date().toISOString() })
+        .update({ push_sent_at: new Date().toISOString() })
         .eq("id", insertedRow.id);
     }
   }

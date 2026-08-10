@@ -82,3 +82,71 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// ---------------------------------------------------------------------------
+// Web Push (D-013) — canal suplimentar față de in-app + email. Payload-ul e
+// controlat de server (vezi src/lib/push/send-alert.ts): { title, body, url,
+// notificationId }. notificationId identifică rândul din notifications_log,
+// folosit pentru tracking (push_clicked_at / push_dismissed_at).
+// ---------------------------------------------------------------------------
+type PushPayload = { title: string; body: string; url: string; notificationId: string };
+
+self.addEventListener("push", (event: PushEvent) => {
+  let payload: PushPayload | null = null;
+  try {
+    payload = event.data?.json() ?? null;
+  } catch {
+    payload = null;
+  }
+  if (!payload) return;
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: payload.url, notificationId: payload.notificationId },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event: NotificationEvent) => {
+  const { url, notificationId } = (event.notification.data ?? {}) as {
+    url?: string;
+    notificationId?: string;
+  };
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const target = url ?? "/app/garage";
+      const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const existing = clientsList.find((c) => new URL(c.url).pathname === target);
+      if (existing) await existing.focus();
+      else await self.clients.openWindow(target);
+
+      if (notificationId) {
+        await fetch("/api/push/clicked", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notificationId }),
+        }).catch(() => {});
+      }
+    })()
+  );
+});
+
+self.addEventListener("notificationclose", (event: NotificationEvent) => {
+  const { notificationId } = (event.notification.data ?? {}) as { notificationId?: string };
+  if (!notificationId) return;
+
+  // Best-effort — browserul poate omite trimiterea dacă tab-ul se închide
+  // imediat după dismiss.
+  event.waitUntil(
+    fetch("/api/push/dismissed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationId }),
+    }).catch(() => {})
+  );
+});
