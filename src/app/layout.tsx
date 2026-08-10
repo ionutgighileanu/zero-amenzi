@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,24 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "AutoDocs",
   description: "Verificare automată a actelor auto și alerte înainte de expirare.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Zero Amenzi",
+  },
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
+  // Next.js generează azi doar varianta standard "mobile-web-app-capable"
+  // din appleWebApp.capable — adăugăm și forma prefixată, citită de Safari.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#003399",
 };
 
 export default function RootLayout({

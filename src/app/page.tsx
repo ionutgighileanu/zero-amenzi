@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
+import { InstallBanner } from "@/components/ui/InstallBanner";
 import { VerificationForm } from "@/components/VerificationForm";
 import { Nav } from "@/components/landing/Nav";
 import { Faq } from "@/components/landing/Faq";
@@ -451,6 +452,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      <InstallBanner />
     </div>
   );
 }
