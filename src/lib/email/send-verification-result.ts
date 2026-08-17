@@ -6,7 +6,7 @@ import type { VerificationResultValue } from "@/lib/constants";
 export type VerificationResultEmailParams = {
   to: string;
   plate: string;
-  token: string;
+  requestId: string;
   appUrl: string;
   itp: VerificationResultValue | null;
   rca: VerificationResultValue | null;
@@ -34,7 +34,7 @@ function row(label: string, tone: ResultTone, text: string): string {
 }
 
 function buildHtml(params: VerificationResultEmailParams): string {
-  const resultPageUrl = `${params.appUrl}/verificare/${params.token}`;
+  const resultPageUrl = `${params.appUrl}/verificare/status/${params.requestId}`;
   const signupUrl = `${params.appUrl}/signup`;
 
   const itp = describeResult(params.itp, params.itpExpires);
@@ -73,7 +73,7 @@ function buildHtml(params: VerificationResultEmailParams): string {
                   </a>
                 </div>
                 <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
-                  Sau <a href="${resultPageUrl}" style="color:${BRAND_BLUE};">vezi rezultatul complet în pagina de verificare</a>.
+                  Sau <a href="${resultPageUrl}" style="color:${BRAND_BLUE};">vezi rezultatul complet în pagina de status</a>.
                 </p>
               </td>
             </tr>
@@ -87,7 +87,7 @@ function buildHtml(params: VerificationResultEmailParams): string {
 
 /** Trimis de admin la finalul completării unei cereri de verificare (dacă
  * solicitantul a lăsat un email). Eșec grațios — rezultatul rămâne salvat
- * și vizibil la /verificare/[token] indiferent dacă email-ul pleacă sau nu. */
+ * și vizibil la /verificare/status/[id] indiferent dacă email-ul pleacă sau nu. */
 export async function sendVerificationResultEmail(
   params: VerificationResultEmailParams
 ): Promise<boolean> {

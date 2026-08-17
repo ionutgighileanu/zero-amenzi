@@ -47,6 +47,20 @@ export const VERIFICATION_RESULT_OPTIONS = [
 
 export type VerificationResultValue = (typeof VERIFICATION_RESULT_OPTIONS)[number]["value"];
 
+/** Cât de des întreabă pagina de status (/verificare/status/[id]) endpoint-ul
+ * dacă cererea a fost completată. */
+export const VERIFICATION_POLL_SECONDS = 60;
+
+/** După atâtea ore de la trimitere, pagina de status renunță la verificarea
+ * periodică — o cerere rămasă „pending" atât de mult n-o să se rezolve
+ * singură, iar un tab uitat deschis nu trebuie să întrebe la nesfârșit. */
+export const VERIFICATION_POLL_MAX_HOURS = 24;
+
+/** TTL-ul cache-ului de pe /api/verificare/status/[id]. Mai scurt decât
+ * intervalul de polling, ca un client să nu prindă niciodată același răspuns
+ * cache-uit de două ori la rând. */
+export const VERIFICATION_STATUS_CACHE_SECONDS = 30;
+
 /** Linkuri către sursele oficiale de verificare, arătate în panoul admin
  * (/admin/vehicles/[id]) deasupra formularelor de adăugare/actualizare a
  * documentelor. Cheile trebuie să oglindească valorile din CORE_DOC_TYPES

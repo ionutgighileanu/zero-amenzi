@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
 import { sendNewVerificationRequestEmail } from "@/lib/email/send-new-verification-request";
+import { createVerificationNotification } from "@/lib/verificationNotification";
 import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
 
 export type CreateVerificationState =
   | { status: "idle" }
   | { status: "error"; error: string }
-  | { status: "created"; token: string; plate: string };
+  | { status: "created"; id: string; token: string; plate: string; hasAccount: boolean };
 
 /**
  * Tokenul e generat aici, nu citit înapoi din DB — clientul anonim n-are
@@ -39,11 +40,20 @@ export async function createVerificationRequestAction(
   const token = randomUUID();
   const createdAt = new Date();
   const supabase = await createClient();
+
+  // Dacă vizitatorul are sesiune, legăm cererea de contul lui — asta e
+  // singurul lucru care face posibilă notificarea in-app la finalizare.
+  // Policy-ul de INSERT acceptă doar user_id = auth.uid() sau null, deci o
+  // cerere anonimă rămâne pur și simplu nelegată.
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id ?? null;
+
   const { error } = await supabase.from("verification_requests").insert({
     id,
     plate_number: plate,
     email,
     token,
+    user_id: userId,
     created_at: createdAt.toISOString(),
   });
 
@@ -61,7 +71,7 @@ export async function createVerificationRequestAction(
     appUrl,
   });
 
-  return { status: "created", token, plate };
+  return { status: "created", id, token, plate, hasAccount: userId !== null };
 }
 
 /**
@@ -119,7 +129,7 @@ export async function completeVerificationAction(id: string, results: CompleteVe
     await sendVerificationResultEmail({
       to: updated.email,
       plate: updated.plate_number,
-      token: updated.token,
+      requestId: updated.id,
       appUrl,
       itp: updated.result_itp,
       rca: updated.result_rca,
@@ -130,5 +140,13 @@ export async function completeVerificationAction(id: string, results: CompleteVe
     });
   }
 
+  // Notificare in-app — doar dacă cererea e legată de un cont. Independentă
+  // de email: o cerere poate avea cont fără email atașat și invers.
+  if (updated.user_id) {
+    await createVerificationNotification(updated);
+  }
+
   revalidatePath("/admin/verifications");
+  revalidatePath(`/verificare/status/${updated.id}`);
+  revalidatePath("/app", "layout");
 }

@@ -3,6 +3,7 @@ import { AppHeader, type Space } from "@/components/app/AppHeader";
 import { MotionProvider } from "@/components/MotionProvider";
 import { InstallBanner } from "@/components/ui/InstallBanner";
 import { PushOnboarding } from "@/components/app/PushOnboarding";
+import { VerificationNotifications } from "@/components/app/VerificationNotifications";
 import { createClient } from "@/lib/supabase/server";
 import type { NotificationItem } from "@/lib/notifications";
 
@@ -34,10 +35,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const notifications = await fetchUnreadNotifications(supabase, auth.user.id, orgIds);
 
+  // Notificări in-app din tabela `notifications` (azi: verificări finalizate).
+  // Separate de notifications_log/clopoțel — altă formă, alt tabel.
+  const { data: inAppNotifications } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", auth.user.id)
+    .is("read_at", null)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
   return (
     <MotionProvider>
       <div className="min-h-screen bg-slate-50 text-slate-900 flex-1">
         <AppHeader email={auth.user.email ?? ""} orgSpaces={orgSpaces} notifications={notifications} />
+        <VerificationNotifications initial={inAppNotifications ?? []} />
         {children}
         <InstallBanner />
         <PushOnboarding />

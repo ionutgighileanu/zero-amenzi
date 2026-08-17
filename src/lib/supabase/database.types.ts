@@ -310,6 +310,7 @@ export type Database = {
           created_at: string;
           completed_at: string | null;
           token: string;
+          user_id: string | null;
         };
         Insert: {
           id?: string;
@@ -325,6 +326,7 @@ export type Database = {
           created_at?: string;
           completed_at?: string | null;
           token?: string;
+          user_id?: string | null;
         };
         Update: {
           id?: string;
@@ -340,6 +342,43 @@ export type Database = {
           created_at?: string;
           completed_at?: string | null;
           token?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "verification_completed";
+          verification_request_id: string | null;
+          title: string;
+          body: string;
+          href: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "verification_completed";
+          verification_request_id?: string | null;
+          title: string;
+          body: string;
+          href: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: "verification_completed";
+          verification_request_id?: string | null;
+          title?: string;
+          body?: string;
+          href?: string;
+          read_at?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };

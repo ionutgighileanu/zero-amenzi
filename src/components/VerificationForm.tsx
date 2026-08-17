@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -15,10 +15,20 @@ import {
 const initialState: CreateVerificationState = { status: "idle" };
 
 export function VerificationForm() {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(createVerificationRequestAction, initialState);
   const [dismissed, setDismissed] = useState(false);
 
-  const showModal = state.status === "created" && !dismissed;
+  // Autentificat: îi știm deja emailul din cont și cererea e legată de el,
+  // deci nu mai are ce completa — trecem direct la pagina de status.
+  const created = state.status === "created" ? state : null;
+  const skipEmailPrompt = created?.hasAccount ?? false;
+
+  useEffect(() => {
+    if (created && skipEmailPrompt) router.push(`/verificare/status/${created.id}`);
+  }, [created, skipEmailPrompt, router]);
+
+  const showModal = created !== null && !skipEmailPrompt && !dismissed;
 
   return (
     <div className="max-w-md">
@@ -55,10 +65,11 @@ export function VerificationForm() {
         </div>
       )}
 
-      {showModal && state.status === "created" && (
+      {showModal && created && (
         <VerificationStartedModal
-          plate={state.plate}
-          token={state.token}
+          plate={created.plate}
+          id={created.id}
+          token={created.token}
           onClose={() => setDismissed(true)}
         />
       )}
@@ -68,10 +79,12 @@ export function VerificationForm() {
 
 function VerificationStartedModal({
   plate,
+  id,
   token,
   onClose,
 }: {
   plate: string;
+  id: string;
   token: string;
   onClose: () => void;
 }) {
@@ -81,10 +94,12 @@ function VerificationStartedModal({
 
   const openProgress = async () => {
     setNavigating(true);
+    // Emailul se atașează prin token (RPC-ul e keyed pe token, vezi migrarea);
+    // navigarea folosește id-ul, care e identificatorul paginii de status.
     if (email.trim()) {
       await attachVerificationEmailAction(token, email);
     }
-    router.push(`/verificare/${token}`);
+    router.push(`/verificare/status/${id}`);
   };
 
   return (
