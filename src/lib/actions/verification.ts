@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
+import { sendNewVerificationRequestEmail } from "@/lib/email/send-new-verification-request";
 import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
 
 export type CreateVerificationState =
@@ -30,17 +31,35 @@ export async function createVerificationRequestAction(
     return { status: "error", error: "Introdu un număr de înmatriculare valid." };
   }
 
+  // id + created_at generate aici, nu citite înapoi din DB — din același
+  // motiv ca tokenul: clientul anonim n-are nicio policy de SELECT pe
+  // verification_requests, deci un `.insert().select()` clasic ar eșua
+  // tăcut la partea de select.
+  const id = randomUUID();
   const token = randomUUID();
+  const createdAt = new Date();
   const supabase = await createClient();
   const { error } = await supabase.from("verification_requests").insert({
+    id,
     plate_number: plate,
     email,
     token,
+    created_at: createdAt.toISOString(),
   });
 
   if (error) {
     return { status: "error", error: "Nu am putut înregistra cererea. Încearcă din nou." };
   }
+
+  // Notificare admin — best-effort, nu blochează crearea cererii dacă
+  // trimiterea eșuează (vezi sendNewVerificationRequestEmail).
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  await sendNewVerificationRequestEmail({
+    requestId: id,
+    plate,
+    createdAt: createdAt.toISOString(),
+    appUrl,
+  });
 
   return { status: "created", token, plate };
 }

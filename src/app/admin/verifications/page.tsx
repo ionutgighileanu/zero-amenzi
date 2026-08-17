@@ -6,7 +6,12 @@ import { VerificationsAdminBoard } from "@/components/admin/VerificationsAdminBo
 
 export const metadata: Metadata = { title: "Cereri de verificare — Admin" };
 
-export default async function AdminVerificationsPage() {
+export default async function AdminVerificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ request?: string }>;
+}) {
+  const { request } = await searchParams;
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
 
@@ -19,5 +24,5 @@ export default async function AdminVerificationsPage() {
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
-  return <VerificationsAdminBoard initialRequests={requests ?? []} />;
+  return <VerificationsAdminBoard initialRequests={requests ?? []} highlightId={request} />;
 }

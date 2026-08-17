@@ -22,9 +22,19 @@ function formatRequestedAt(iso: string): string {
   });
 }
 
-export function VerificationsAdminBoard({ initialRequests }: { initialRequests: VerificationRow[] }) {
+export function VerificationsAdminBoard({
+  initialRequests,
+  highlightId,
+}: {
+  initialRequests: VerificationRow[];
+  highlightId?: string;
+}) {
   const [requests, setRequests] = useState(initialRequests);
-  const [selected, setSelected] = useState<VerificationRow | null>(null);
+  // Linkul din emailul de notificare deschide direct cererea (?request=id).
+  // Dacă a fost deja completată de altcineva, nu mai e în listă — no-op.
+  const [selected, setSelected] = useState<VerificationRow | null>(
+    highlightId ? (initialRequests.find((r) => r.id === highlightId) ?? null) : null
+  );
 
   const onCompleted = (id: string) => {
     setRequests((prev) => prev.filter((r) => r.id !== id));
