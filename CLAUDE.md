@@ -98,3 +98,10 @@ npx supabase start   # Supabase local (dacă folosești CLI)
 - [emilkowalski/skills](https://github.com/emilkowalski/skills)
 - [magicui](https://github.com/magicuidesign/magicui)
 - [product-management-context](https://github.com/mbryksin/product-management-context)
+
+## Reading Large Files
+
+When reading large files, run `wc -l` first to check the line count.
+If the file is over 2,000 lines, use the `offset` and `limit` parameters
+on the Read tool to read in chunks rather than attempting to read the
+entire file at once.
