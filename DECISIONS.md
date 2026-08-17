@@ -92,15 +92,15 @@ strategia cea mai sigură.
 Tracking implementat: push_sent_at, push_clicked_at, push_dismissed_at
 în notifications_log — pentru analytics, nu pentru a tăia email-uri.
 
-Aș reveni dacă: Datele arată că >80% din push-uri sunt clicked și email-urile
-duplicate deranjează utilizatorii — atunci varianta (C) devine candidat.
+## D-014 · 2026-08 · Panoul de administrare: gestionarea documentelor vehiculelor
 
-## D-014 · 2026-08 · Panoul de administrare: gestionarea documentelor vehicule
-
-Context: Administratorul trebuie să poată adăuga și actualiza manual documentele
-(ITP, RCA, roviniete) pentru vehiculele din sistem — în MVP, nu avem baze de
-date automate. O pagină publică de verificare există, dar datele sunt completate
-manual din diferite surse.
+Context: Eu, ca administrator al aplicației Zero Amenzi, trebuie să pot adăuga 
+și actualiza manual documentele (ITP, RCA, roviniete) pentru vehiculele din 
+sistem. În acest MVP, nu avem încă integrări automate cu bazele de date ale 
+autorităților (RAR, CEDAM, CNAIR). Deși aplicația are o pagină publică unde 
+utilizatorii pot solicita verificarea documentelor unui vehicul, datele efective 
+sunt completate manual de către mine, administratorul aplicației, din diferite 
+surse oficiale.
 
 Decizii luate:
 - Rută nouă `/admin/vehicles/[id]` accesibilă doar la email hardcodat
