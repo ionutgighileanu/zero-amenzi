@@ -94,3 +94,58 @@ Tracking implementat: push_sent_at, push_clicked_at, push_dismissed_at
 
 Aș reveni dacă: Datele arată că >80% din push-uri sunt clicked și email-urile
 duplicate deranjează utilizatorii — atunci varianta (C) devine candidat.
+
+## D-014 · 2026-08 · Panoul de administrare: gestionarea documentelor vehicule
+
+Context: Administratorul trebuie să poată adăuga și actualiza manual documentele
+(ITP, RCA, roviniete) pentru vehiculele din sistem — în MVP, nu avem baze de
+date automate. O pagină publică de verificare există, dar datele sunt completate
+manual din diferite surse.
+
+Decizii luate:
+- Rută nouă `/admin/vehicles/[id]` accesibilă doar la email hardcodat
+  (ADMIN_EMAIL). RLS pe vehicles/vehicle_docs extins cu politici admin.
+- Modaluri separate de adăugare/actualizare cu select predefinit (RCA/ITP/Rovinietă/Tahograf)
+  + opțiune „Alt tip" liberă pentru extensibilitate.
+- Link-uri ajutătoare deasupra fiecărei secțiuni: CEDAM (RCA), RAR (ITP),
+  CNAIR (roviniete).
+- Documente grupate pe tip, RCA/ITP/Rovinietă mereu vizibile (chiar dacă nu
+  există încă rânduri), restul tipurilor pe măsură ce apar.
+
+Raționament: Interfață minimalistă pentru o sarcină rară (admin completează
+manual sub presiune de timp). Linkurile oficiale accelerează căutarea. Soft-delete
+și undo pentru vehicule / șoferi deja existau, nu sunt adăugate aici.
+
+## D-015 · 2026-08 · Notificări pentru cereri de verificare publică
+
+Context: Pagina de verificare permite utilizatorilor anonimi să ceară o verificare
+a unui vehicul. Administratorul trebuie notificat imediat, utilizatorul trebuie
+să facă tracking la rezultat, și dacă are cont, ar trebui o notificare in-app.
+
+Decizii luate:
+- Email admin la fiecare cerere nouă (nu doar la finalizare): link direct la
+  `/admin/verifications?request=[id]` pentru a deschide modalul cererii respective.
+- Pagina `/verificare/status/[id]` pentru tracking public: plăcuță, dată/oră
+  trimitere, status curent, polling la 60 secunde (nu 30, ca să nu fie de-a
+  dreptul agresiv) cu stop automat după 24 ore.
+- API `/api/verificare/status/[id]` cu cache 30s per instanță (mai scurt decât
+  intervalul de polling) + `Cache-Control: private`, ca clientul să nu lovească
+  DB-ul repetat.
+- Notificare in-app doar dacă utilizatorul era autentificat la cerere: capturăm
+  `user_id` la insert. Policy de INSERT pe verification_requests acceptă doar
+  `user_id = auth.uid()` sau null — fără asta, anonim putea lega cererea de alt cont.
+- Tabela `notifications` separată de `notifications_log` (care servește alertele
+  de expirare cu constrângere XOR pe vehicle_doc/driver_cert). Index unic pe
+  verification_request_id previne duplicate-uri la retry/dublu-click.
+
+Raționament: Administratorul nu pierde timp căutând cererea în tabel dacă emailul
+deschide direct modalul. Utilizatorul anonim nu se pierde după trimitere (linkul
+e singurul reper dacă nu a salvat email). Utilizatorul autentificat primește o
+notificare care se sincronizează cu pagina de status. Polling-ul e ușor (UUID
+neghicibil, fără autentificare necesară, cache scurt) și se oprește automat ca
+să nu mai întrebe o cerere care-și pierduse speranța.
+
+Aș reveni dacă: Utilizatorii se plâng că polling e prea activ (baterie / trafic)
+— atunci cresc intervalul la 2-3 minute pentru mobile, cu fallback la email. Sau
+dacă cer notificări push pentru finalizare — atunci adaug asta ca al patrulea
+canal.
