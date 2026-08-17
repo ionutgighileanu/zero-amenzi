@@ -47,6 +47,17 @@ export const VERIFICATION_RESULT_OPTIONS = [
 
 export type VerificationResultValue = (typeof VERIFICATION_RESULT_OPTIONS)[number]["value"];
 
+/** Linkuri către sursele oficiale de verificare, arătate în panoul admin
+ * (/admin/vehicles/[id]) deasupra formularelor de adăugare/actualizare a
+ * documentelor. Cheile trebuie să oglindească valorile din CORE_DOC_TYPES
+ * (src/lib/vehicles.ts) — tipurile fără link (ex. Tahograf, tipuri custom)
+ * pur și simplu nu apar în listă. */
+export const ADMIN_DOC_HELPER_LINKS: Record<string, { label: string; url: string }> = {
+  RCA: { label: "CEDAM", url: "https://www.cedam.ro/" },
+  ITP: { label: "RAR", url: "https://www.rarom.ro/" },
+  "Rovinietă": { label: "CNAIR", url: "https://www.roviniete.ro/" },
+};
+
 export type RcaOffer = { insurer: string; price: number; best: boolean };
 
 export const RCA_OFFERS: RcaOffer[] = [
