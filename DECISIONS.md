@@ -206,5 +206,10 @@ PWA deschide aplicația într-o fereastră "app-like" fără browser chrome —
 utilizatorii se așteaptă la browser normal și fereastra separată pare 
 un bug, nu un feature.
 
+Efect secundar acceptat: InstallBanner nu apare nici pe landing page desktop — 
+poarta e în componentă, nu la punctul de montare. Decizie conștientă: 
+motivul (fereastra PWA fără chrome de browser pare un bug, nu un feature) 
+se aplică identic vizitatorului de pe landing, nu doar utilizatorului din dashboard.
+
 Aș reveni dacă: Utilizatorii cer explicit PWA install pe desktop pentru 
 acces rapid separat de tab-uri de browser.

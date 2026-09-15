@@ -62,6 +62,17 @@ notifications_log   → istoric alerte trimise
 - **B2B:** tabel compact sortabil/filtrabil, KPI strip, tab șoferi
 - **Soft-delete:** ștergerea unui vehicul/șofer setează `deleted_at`, nu șterge rândul. UI arată un banner de 30s cu opțiune Undo (`deleted_at = null`); după expirare, ștergerea devine efectivă din perspectiva UI (rândurile cu `deleted_at` setat sunt excluse din listări).
 
+## DECISIONS.md — jurnalul de decizii
+
+Deciziile de produs și arhitectură se scriu în `DECISIONS.md`, ca secțiuni
+`## D-XXX · AAAA-LL · Titlu`, în ordine crescătoare, adăugate la sfârșit.
+
+**IMPORTANT:** Înainte de a adăuga o nouă intrare D-XXX, rulează întâi:
+```bash
+grep '^## D-' DECISIONS.md | tail -5
+```
+pentru a verifica ultimul ID liber și a evita coliziuni.
+
 ## Convenții de cod
 - Toate componentele în `src/components/`
 - Server Components implicit, `"use client"` doar unde e nevoie de interactivitate
