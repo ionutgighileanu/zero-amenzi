@@ -149,3 +149,39 @@ Aș reveni dacă: Utilizatorii se plâng că polling e prea activ (baterie / tra
 — atunci cresc intervalul la 2-3 minute pentru mobile, cu fallback la email. Sau
 dacă cer notificări push pentru finalizare — atunci adaug asta ca al patrulea
 canal.
+
+## D-016 · 2026-08 · Google OAuth: activat și funcțional
+
+Context: D-anterior amânase configurarea Google OAuth. Acum e configurat complet și funcțional end-to-end pe production.
+
+Configurare făcută:
+- Google Cloud Console: proiect nou "Zero Amenzi", OAuth consent screen External
+- OAuth Client ID Web application creat cu Authorized redirect URIs:
+  * http://localhost:3000/auth/callback
+  * https://zero-amenzi.vercel.app/auth/callback
+  * https://[project-ref].supabase.co/auth/v1/callback (critic — asta e URI-ul pe care Supabase îl trimite către Google)
+- Supabase → Authentication → Providers → Google: enabled cu Client ID + Secret
+
+Probleme întâlnite și rezolvate:
+
+1. Eroare "redirect_uri_mismatch" la primul test
+- Cauza: URI-ul Supabase callback nu era în allow-list-ul Google Cloud Console
+- Confuzie tehnică clarificată: redirectTo (parametrul din cod, aplicație → Supabase) și redirect_uri (parametrul Supabase → Google) sunt lucruri diferite. Aplicația nu trimite niciodată redirect_uri către Google — îl generează serverul Supabase din propriul project URL.
+- Fix: adăugare exactă a https://[project-ref].supabase.co/auth/v1/callback în Authorized redirect URIs în Google Cloud Console
+
+2. Eroare "ERR_CONNECTION_REFUSED" pe localhost după autentificare Google reușită
+- Cauza: Supabase Site URL era setat pe http://localhost:3000. Google autentifica corect utilizatorul, Supabase primea token-ul, dar apoi trimitea utilizatorul înapoi pe localhost (care nu răspundea din production)
+- Simptom: URL-ul arăta "localhost:3000/?code=..." — deci fluxul funcționase, doar destinația finală era greșită
+- Fix în Supabase → Authentication → URL Configuration:
+  * Site URL schimbat din http://localhost:3000 în https://zero-amenzi.vercel.app
+  * Redirect URLs adăugate cu wildcard pentru ambele medii:
+    - http://localhost:3000/** (pentru testare locală)
+    - https://zero-amenzi.vercel.app/** (pentru production)
+  * Wildcard /** permite orice pagină de destinație după login, nu doar o rută fixă
+
+3. Bug în cod prins și reparat separat
+- signInWithOAuth returna {error} care era ignorat — dacă providerul nu era configurat, butonul Google rămânea disabled permanent, zero feedback pentru utilizator
+- Fix: afișare eroare + deblocare buton la eșec
+
+Aș reveni dacă:
+- Trebuie să trec aplicația din testing în production Google (necesită Google verification pentru public app, altfel utilizatorii văd "unverified app")
