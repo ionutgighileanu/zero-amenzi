@@ -1,5 +1,6 @@
 import { BRAND_BLUE } from "@/lib/constants";
 import { getResendClient } from "@/lib/email/client";
+import { escapeHtml } from "@/lib/email/escape";
 import { describeResult, type ResultTone } from "@/lib/verification";
 import type { VerificationResultValue } from "@/lib/constants";
 
@@ -27,8 +28,8 @@ function row(label: string, tone: ResultTone, text: string): string {
   return `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-        <span style="font-size:13px;font-weight:700;color:#0f172a;">${label}</span><br/>
-        <span style="font-size:13px;font-weight:600;color:${TONE_COLOR[tone]};">${text}</span>
+        <span style="font-size:13px;font-weight:700;color:#0f172a;">${escapeHtml(label)}</span><br/>
+        <span style="font-size:13px;font-weight:600;color:${TONE_COLOR[tone]};">${escapeHtml(text)}</span>
       </td>
     </tr>`;
 }
@@ -60,7 +61,7 @@ function buildHtml(params: VerificationResultEmailParams): string {
                   Rezultatul verificării
                 </p>
                 <h1 style="margin:0 0 20px;font-size:22px;letter-spacing:0.04em;color:#0f172a;">
-                  ${params.plate}
+                  ${escapeHtml(params.plate)}
                 </h1>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   ${row("ITP", itp.tone, itp.text)}

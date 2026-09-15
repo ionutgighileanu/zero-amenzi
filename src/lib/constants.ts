@@ -26,6 +26,20 @@ export const DEFAULT_ALERT_TYPES = [
 
 export const MAX_ALERTS = 15;
 
+/** Format plăcuță RO: „B 12 ABC" / „B 123 ABC" (București, 1 literă) și
+ * „CJ 12 ABC" (județe, 2 litere). Spațiile sunt opționale la intrare —
+ * normalizarea le pune înapoi. Deliberat puțin permisiv: nu respinge
+ * combinații de litere rezervate, fiindcă scopul e igiena inputului, nu
+ * validarea oficială. Plăcuțele temporare și cele speciale NU trec. */
+export const RO_PLATE_REGEX = /^[A-Z]{1,2} ?\d{2,3} ?[A-Z]{3}$/;
+
+/** Plafon de lungime pe plăcuță înainte de orice altă verificare — o
+ * plăcuță RO normalizată are cel mult 10 caractere („AB 123 ABC"). */
+export const PLATE_MAX_LENGTH = 15;
+
+/** Plafon de lungime pe adresa de email primită de la vizitatori anonimi. */
+export const EMAIL_MAX_LENGTH = 254;
+
 /** Push notifications și PWA install se oferă doar pe mobile (D-017) — pe
  * desktop push are conversie mică, iar fereastra PWA fără browser chrome pare
  * un bug. Folosit de PushOnboarding și InstallBanner, deci pragul se schimbă

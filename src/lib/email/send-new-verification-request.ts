@@ -1,5 +1,6 @@
 import { ADMIN_EMAIL, BRAND_BLUE } from "@/lib/constants";
 import { getResendClient } from "@/lib/email/client";
+import { escapeHtml } from "@/lib/email/escape";
 
 export type NewVerificationRequestEmailParams = {
   requestId: string;
@@ -44,13 +45,13 @@ function buildHtml(params: NewVerificationRequestEmailParams): string {
                   Cerere de verificare nouă
                 </p>
                 <h1 style="margin:0 0 20px;font-size:22px;letter-spacing:0.04em;color:#0f172a;">
-                  ${params.plate}
+                  ${escapeHtml(params.plate)}
                 </h1>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
                       <span style="font-size:13px;font-weight:700;color:#0f172a;">ID cerere</span><br/>
-                      <span style="font-size:13px;color:#475569;font-family:monospace;">${params.requestId}</span>
+                      <span style="font-size:13px;color:#475569;font-family:monospace;">${escapeHtml(params.requestId)}</span>
                     </td>
                   </tr>
                   <tr>

@@ -1,5 +1,6 @@
 import { BRAND_BLUE } from "@/lib/constants";
 import { getResendClient } from "@/lib/email/client";
+import { escapeHtml } from "@/lib/email/escape";
 
 export type AlertEmailParams = {
   to: string;
@@ -41,10 +42,10 @@ function buildHtml(params: AlertEmailParams): string {
             <tr>
               <td style="padding:28px;">
                 <p style="margin:0 0 6px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#64748b;">
-                  ${docType}
+                  ${escapeHtml(docType)}
                 </p>
                 <h1 style="margin:0 0 16px;font-size:20px;line-height:1.4;color:#0f172a;">
-                  ${subjectLabel} — ${timeframe}
+                  ${escapeHtml(subjectLabel)} — ${timeframe}
                 </h1>
                 <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#475569;">
                   Data expirării: <strong>${formatRo(expiresAt)}</strong>.

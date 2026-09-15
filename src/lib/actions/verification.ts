@@ -6,7 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
 import { sendNewVerificationRequestEmail } from "@/lib/email/send-new-verification-request";
 import { createVerificationNotification } from "@/lib/verificationNotification";
-import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
+import {
+  ADMIN_EMAIL,
+  PLATE_MAX_LENGTH,
+  RO_PLATE_REGEX,
+  type VerificationResultValue,
+} from "@/lib/constants";
 
 export type CreateVerificationState =
   | { status: "idle" }
@@ -24,12 +29,21 @@ export async function createVerificationRequestAction(
   _prevState: CreateVerificationState,
   formData: FormData
 ): Promise<CreateVerificationState> {
-  const plate = String(formData.get("plate") ?? "").trim().toUpperCase();
+  // Plafonul de lungime se aplică ÎNAINTE de orice altceva: inputul vine de
+  // la un vizitator neautentificat, iar coloana din DB e `text`, deci fără el
+  // s-ar putea insera câmpuri de dimensiune arbitrară (F-05).
+  const plateRaw = String(formData.get("plate") ?? "").slice(0, PLATE_MAX_LENGTH);
+  // Normalizăm spațiile interne, ca „B12ABC", „b 12 abc" și „B  12  ABC" să
+  // ajungă toate la aceeași formă canonică înainte de verificarea de format.
+  const plate = plateRaw.trim().toUpperCase().replace(/\s+/g, " ");
   const emailRaw = String(formData.get("email") ?? "").trim();
   const email = emailRaw.length > 0 ? emailRaw : null;
 
-  if (plate.length < 4) {
-    return { status: "error", error: "Introdu un număr de înmatriculare valid." };
+  if (!RO_PLATE_REGEX.test(plate)) {
+    return {
+      status: "error",
+      error: "Introdu un număr de înmatriculare valid (ex. B 12 ABC sau CJ 34 DEF).",
+    };
   }
 
   // id + created_at generate aici, nu citite înapoi din DB — din același
