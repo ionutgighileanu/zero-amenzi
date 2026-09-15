@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { plausibleDocDates } from "@/lib/vehicles";
+import { normalizePlate } from "@/lib/plate";
 
 export type VehicleScope =
   | { ownerId: string; orgId?: undefined }
@@ -19,7 +20,10 @@ export async function addVehicleAction(scope: Scope, plate: string, vin: string)
   const { data: vehicle, error } = await supabase
     .from("vehicles")
     .insert({
-      plate: plate.trim().toUpperCase(),
+      // Formă canonică pentru plăcuțele RO („b12abc" -> „B 12 ABC"), ca
+      // aceeași mașină să nu ajungă în DB scrisă în mai multe feluri. O
+      // plăcuță străină trece neatinsă — vezi normalizePlate.
+      plate: normalizePlate(plate),
       vin: vin.trim().toUpperCase(),
       owner_id: scope.ownerId ?? null,
       org_id: scope.orgId ?? null,

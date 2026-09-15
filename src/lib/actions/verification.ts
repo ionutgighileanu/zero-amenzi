@@ -6,12 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
 import { sendNewVerificationRequestEmail } from "@/lib/email/send-new-verification-request";
 import { createVerificationNotification } from "@/lib/verificationNotification";
+import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
 import {
-  ADMIN_EMAIL,
-  PLATE_MAX_LENGTH,
-  RO_PLATE_REGEX,
-  type VerificationResultValue,
-} from "@/lib/constants";
+  attachVerificationEmailSchema,
+  createVerificationRequestSchema,
+} from "@/lib/validation/verification";
 
 export type CreateVerificationState =
   | { status: "idle" }
@@ -29,22 +28,21 @@ export async function createVerificationRequestAction(
   _prevState: CreateVerificationState,
   formData: FormData
 ): Promise<CreateVerificationState> {
-  // Plafonul de lungime se aplică ÎNAINTE de orice altceva: inputul vine de
-  // la un vizitator neautentificat, iar coloana din DB e `text`, deci fără el
-  // s-ar putea insera câmpuri de dimensiune arbitrară (F-05).
-  const plateRaw = String(formData.get("plate") ?? "").slice(0, PLATE_MAX_LENGTH);
-  // Normalizăm spațiile interne, ca „B12ABC", „b 12 abc" și „B  12  ABC" să
-  // ajungă toate la aceeași formă canonică înainte de verificarea de format.
-  const plate = plateRaw.trim().toUpperCase().replace(/\s+/g, " ");
-  const emailRaw = String(formData.get("email") ?? "").trim();
-  const email = emailRaw.length > 0 ? emailRaw : null;
+  // Parsarea se face prima, înainte de orice altă procesare: inputul vine de
+  // la un vizitator neautentificat. Schema normalizează plăcuța și plafonează
+  // lungimile — vezi src/lib/validation/verification.ts.
+  const parsed = createVerificationRequestSchema.safeParse({
+    plate: String(formData.get("plate") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  });
 
-  if (!RO_PLATE_REGEX.test(plate)) {
-    return {
-      status: "error",
-      error: "Introdu un număr de înmatriculare valid (ex. B 12 ABC sau CJ 34 DEF).",
-    };
+  if (!parsed.success) {
+    // Primul mesaj e suficient: formularul are un singur câmp obligatoriu, iar
+    // mesajele din schemă sunt deja scrise pentru utilizator.
+    return { status: "error", error: parsed.error.issues[0].message };
   }
+
+  const { plate, email } = parsed.data;
 
   // id + created_at generate aici, nu citite înapoi din DB — din același
   // motiv ca tokenul: clientul anonim n-are nicio policy de SELECT pe
@@ -94,12 +92,15 @@ export async function createVerificationRequestAction(
  * fiindcă UPDATE direct pe tabelă e admin-only — vezi migrarea.
  */
 export async function attachVerificationEmailAction(token: string, email: string) {
-  const trimmed = email.trim();
-  if (!trimmed) return;
+  // Tokenul ajunge într-un RPC SECURITY DEFINER, iar emailul devine
+  // destinatarul efectiv al rezultatului — ambele se validează înainte (F-06).
+  const parsed = attachVerificationEmailSchema.safeParse({ token, email });
+  if (!parsed.success) return;
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("attach_verification_email", {
-    p_token: token,
-    p_email: trimmed,
+    p_token: parsed.data.token,
+    p_email: parsed.data.email,
   });
   if (error) console.error("Nu am putut atașa email-ul cererii de verificare:", error);
 }

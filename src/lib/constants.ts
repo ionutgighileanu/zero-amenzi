@@ -26,16 +26,23 @@ export const DEFAULT_ALERT_TYPES = [
 
 export const MAX_ALERTS = 15;
 
-/** Format plăcuță RO: „B 12 ABC" / „B 123 ABC" (București, 1 literă) și
- * „CJ 12 ABC" (județe, 2 litere). Spațiile sunt opționale la intrare —
- * normalizarea le pune înapoi. Deliberat puțin permisiv: nu respinge
- * combinații de litere rezervate, fiindcă scopul e igiena inputului, nu
- * validarea oficială. Plăcuțele temporare și cele speciale NU trec. */
-export const RO_PLATE_REGEX = /^[A-Z]{1,2} ?\d{2,3} ?[A-Z]{3}$/;
+/** Părțile unei plăcuțe RO, pe forma compactă (fără spații/cratime):
+ * „B" + „12" + „ABC" sau „CJ" + „34" + „DEF". Folosit de normalizePlate()
+ * (src/lib/plate.ts) ca să reconstruiască forma canonică. Deliberat puțin
+ * permisiv: nu respinge combinații de litere rezervate, fiindcă scopul e
+ * igiena inputului, nu validarea oficială. Plăcuțele temporare și cele
+ * speciale NU trec. */
+export const RO_PLATE_PARTS = /^([A-Z]{1,2})(\d{2,3})([A-Z]{3})$/;
 
-/** Plafon de lungime pe plăcuță înainte de orice altă verificare — o
- * plăcuță RO normalizată are cel mult 10 caractere („AB 123 ABC"). */
-export const PLATE_MAX_LENGTH = 15;
+/** Forma canonică, cu spații simple — singura acceptată la scriere în DB.
+ * Orice input trece întâi prin normalizePlate(), deci regexul ăsta validează
+ * ieșirea normalizării, nu inputul brut. */
+export const RO_PLATE_REGEX = /^[A-Z]{1,2} \d{2,3} [A-Z]{3}$/;
+
+/** Plafon pe inputul BRUT de plăcuță, înainte de normalizare — mărginește
+ * munca pe un input ostil. Generos față de cele 10 caractere ale formei
+ * canonice, ca să tolereze spațiere ciudată („B   12   ABC"). */
+export const PLATE_INPUT_MAX_LENGTH = 32;
 
 /** Plafon de lungime pe adresa de email primită de la vizitatori anonimi. */
 export const EMAIL_MAX_LENGTH = 254;
