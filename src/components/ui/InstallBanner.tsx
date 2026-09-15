@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { MOBILE_VIEWPORT_QUERY } from "@/lib/constants";
 
 const DISMISS_KEY = "za-install-banner-dismissed";
 
@@ -17,12 +18,17 @@ type BeforeInstallPromptEvent = Event & {
  * dacă utilizatorul n-a respins-o deja (persistat în localStorage).
  * Montat explicit pe landing și în layout-ul /app — nu global, ca să nu
  * apară în mijlocul unui flow (login, signup, verificare).
+ *
+ * Doar pe mobile (vezi D-017): acolo instalarea pune iconița pe home screen,
+ * comportament util și așteptat. Pe desktop PWA deschide o fereastră fără
+ * browser chrome, care pentru majoritatea utilizatorilor pare un bug.
  */
 export function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!window.matchMedia(MOBILE_VIEWPORT_QUERY).matches) return;
     if (localStorage.getItem(DISMISS_KEY)) return;
 
     const onBeforeInstallPrompt = (e: Event) => {

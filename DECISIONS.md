@@ -186,19 +186,25 @@ Probleme întâlnite și rezolvate:
 Aș reveni dacă:
 - Trebuie să trec aplicația din testing în production Google (necesită Google verification pentru public app, altfel utilizatorii văd "unverified app")
 
-## D-017 · 2026-08 · Push notifications doar pe mobile
+## D-017 · 2026-08 · Push notifications și PWA install doar pe mobile
 
-Context: Web Push notifications au sens doar pentru dispozitive pe care utilizatorul 
-le are aproape de el toată ziua — adică telefonul. Pe desktop, notificarea apare pe 
-monitor când poate ești în altă cameră sau pe alt device.
+Context: Ambele feature-uri (Web Push și PWA install) au valoare reală doar 
+pe telefon, unde utilizatorul are dispozitivul aproape toată ziua și așteaptă 
+comportament tip aplicație. Pe desktop, ambele confuzează mai mult decât ajută.
 
-Decizie: PushOnboarding se afișează doar pe viewport mobile (max-width: 768px). 
-Pe desktop, cardul e ascuns complet. Email + in-app bell rămân canale suficiente.
+Decizii:
+- PushOnboarding: afișat doar pe max-width: 768px
+- InstallBanner: afișat doar pe max-width: 768px
 
-De ce: Zero Amenzi e o aplicație pentru urgențe rare (expirare acte). Utilizatorul 
-nu deschide dashboard-ul zilnic. Push pe desktop e un canal cu rată mică de conversie 
-(monitor departe, atenție distribuită) și high friction (permisiune de browser). 
-Pe mobile, push are sens real — telefonul e mereu la utilizator.
+De ce Push doar pe mobile: Zero Amenzi e o aplicație pentru urgențe rare 
+(expirare acte). Push pe desktop are rată mică de conversie și high friction 
+(permisiune de browser, monitor departe).
 
-Aș reveni dacă: Datele arată că utilizatorii desktop verifică frecvent aplicația 
-și cer explicit push notifications pentru desktop.
+De ce PWA install doar pe mobile: Pe mobile, PWA adaugă iconița pe home screen 
+— utilizatorul obține o "aplicație" reală, comportament așteptat. Pe desktop, 
+PWA deschide aplicația într-o fereastră "app-like" fără browser chrome — 
+utilizatorii se așteaptă la browser normal și fereastra separată pare 
+un bug, nu un feature.
+
+Aș reveni dacă: Utilizatorii cer explicit PWA install pe desktop pentru 
+acces rapid separat de tab-uri de browser.

@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { BellRing, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { isPushSupported, subscribePush } from "@/lib/push";
+import { MOBILE_VIEWPORT_QUERY } from "@/lib/constants";
 
 const SHOWN_KEY = "push_onboarding_shown";
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
-const MOBILE_QUERY = "(max-width: 768px)";
 
 /**
  * Card discret (nu modal) care apare o singură dată — după primul login,
@@ -24,7 +24,7 @@ export function PushOnboarding() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!window.matchMedia(MOBILE_QUERY).matches) return;
+    if (!window.matchMedia(MOBILE_VIEWPORT_QUERY).matches) return;
     if (!isPushSupported()) return;
     if (Notification.permission !== "default") return;
 

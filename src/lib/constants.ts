@@ -26,6 +26,12 @@ export const DEFAULT_ALERT_TYPES = [
 
 export const MAX_ALERTS = 15;
 
+/** Push notifications și PWA install se oferă doar pe mobile (D-017) — pe
+ * desktop push are conversie mică, iar fereastra PWA fără browser chrome pare
+ * un bug. Folosit de PushOnboarding și InstallBanner, deci pragul se schimbă
+ * dintr-un singur loc. */
+export const MOBILE_VIEWPORT_QUERY = "(max-width: 768px)";
+
 /** Praguri de alertă expirare document (zile rămase). Cronul verifică
  * exact aceste praguri o dată pe zi — vezi src/lib/cron/check-expiries.ts. */
 export const NOTIFICATION_THRESHOLDS = [30, 15, 2, 0] as const;
