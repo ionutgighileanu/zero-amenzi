@@ -50,12 +50,14 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
   const [orgName, setOrgName] = useState("");
   const [cui, setCui] = useState("");
   const [googlePending, setGooglePending] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const action = mode === "signup" ? signUpAction : signInAction;
   const [state, formAction, pending] = useActionState(action, initialState);
 
   const signInWithGoogle = async () => {
     setGooglePending(true);
+    setGoogleError(null);
     // Salvăm intenția de firmă înainte de redirect — /auth/callback o citește
     // după ce Google confirmă identitatea (aceeași cheie ca la signup email).
     if (mode === "signup" && account === "B2B" && orgName.trim()) {
@@ -64,10 +66,17 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
       )}; path=/; max-age=3600; samesite=lax`;
     }
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    // La succes urmează redirect spre Google, deci nu mai ajungem aici. Dacă
+    // ajungem, providerul nu e configurat în Supabase sau a picat rețeaua —
+    // fără asta butonul rămânea blocat în „pending", fără niciun feedback.
+    if (error) {
+      setGoogleError("Conectarea cu Google a eșuat. Încearcă din nou.");
+      setGooglePending(false);
+    }
   };
 
   if (state?.status === "confirm-email") {
@@ -208,6 +217,11 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
             <GoogleIcon />
             {mode === "signup" ? "Înscrie-te cu Google" : "Continuă cu Google"}
           </Button>
+          {googleError && (
+            <p className="text-sm text-red-600 mt-3 text-center" role="alert">
+              {googleError}
+            </p>
+          )}
         </div>
 
         <p className="text-center text-sm text-slate-500 mt-6">

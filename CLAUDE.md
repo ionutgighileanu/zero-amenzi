@@ -76,6 +76,23 @@ SUPABASE_SERVICE_ROLE_KEY=      # doar pe server, niciodată expus
 NEXT_PUBLIC_APP_URL=
 ```
 
+## Google OAuth
+Butonul „Continuă cu Google" (`src/components/auth/AuthForm.tsx`) folosește
+`supabase.auth.signInWithOAuth({ provider: "google" })`, cu redirect spre
+`/auth/callback` (`src/app/auth/callback/route.ts`), unde `code` e schimbat
+pe sesiune.
+
+**Credențialele Google NU stau în `.env.local`.** Aplicația Next.js nu citește
+niciodată `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — handshake-ul OAuth se
+face integral pe serverele Supabase. Se configurează în:
+- **producție:** Supabase Dashboard → Authentication → Providers → Google
+- **local:** `supabase/config.toml` → `[auth.external.google]`, care citește
+  `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` / `_SECRET` din mediu
+
+Redirect URI de autorizat în Google Cloud Console:
+`https://<project-ref>.supabase.co/auth/v1/callback` (producție) și
+`http://127.0.0.1:54321/auth/v1/callback` (local).
+
 ## Comenzi utile
 ```bash
 npm run dev          # development server pe localhost:3000
