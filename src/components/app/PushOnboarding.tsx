@@ -7,6 +7,7 @@ import { isPushSupported, subscribePush } from "@/lib/push";
 
 const SHOWN_KEY = "push_onboarding_shown";
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+const MOBILE_QUERY = "(max-width: 768px)";
 
 /**
  * Card discret (nu modal) care apare o singură dată — după primul login,
@@ -14,11 +15,16 @@ const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
  * târziu" amână reapariția 7 zile; activarea (indiferent de rezultat) sau
  * refuzul explicit din browser opresc reapariția pentru totdeauna (vezi
  * verificarea Notification.permission la montare).
+ *
+ * Doar pe mobile (vezi D-017): pe desktop notificarea apare pe un monitor de
+ * care utilizatorul poate fi departe, deci e un canal cu conversie mică și
+ * fricțiune mare. Email + clopoțelul in-app acoperă desktop-ul.
  */
 export function PushOnboarding() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!window.matchMedia(MOBILE_QUERY).matches) return;
     if (!isPushSupported()) return;
     if (Notification.permission !== "default") return;
 

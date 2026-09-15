@@ -185,3 +185,20 @@ Probleme întâlnite și rezolvate:
 
 Aș reveni dacă:
 - Trebuie să trec aplicația din testing în production Google (necesită Google verification pentru public app, altfel utilizatorii văd "unverified app")
+
+## D-017 · 2026-08 · Push notifications doar pe mobile
+
+Context: Web Push notifications au sens doar pentru dispozitive pe care utilizatorul 
+le are aproape de el toată ziua — adică telefonul. Pe desktop, notificarea apare pe 
+monitor când poate ești în altă cameră sau pe alt device.
+
+Decizie: PushOnboarding se afișează doar pe viewport mobile (max-width: 768px). 
+Pe desktop, cardul e ascuns complet. Email + in-app bell rămân canale suficiente.
+
+De ce: Zero Amenzi e o aplicație pentru urgențe rare (expirare acte). Utilizatorul 
+nu deschide dashboard-ul zilnic. Push pe desktop e un canal cu rată mică de conversie 
+(monitor departe, atenție distribuită) și high friction (permisiune de browser). 
+Pe mobile, push are sens real — telefonul e mereu la utilizator.
+
+Aș reveni dacă: Datele arată că utilizatorii desktop verifică frecvent aplicația 
+și cer explicit push notifications pentru desktop.
