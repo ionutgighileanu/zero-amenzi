@@ -4,13 +4,13 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
-import { sendNewVerificationRequestEmail } from "@/lib/email/send-new-verification-request";
 import { createVerificationNotification } from "@/lib/verificationNotification";
 import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
 import {
   attachVerificationEmailSchema,
   createVerificationRequestSchema,
 } from "@/lib/validation/verification";
+import { clientIp, limitVerification, retryMessage } from "@/lib/ratelimit";
 
 export type CreateVerificationState =
   | { status: "idle" }
@@ -28,6 +28,14 @@ export async function createVerificationRequestAction(
   _prevState: CreateVerificationState,
   formData: FormData
 ): Promise<CreateVerificationState> {
+  // Rate limit înaintea parsării: o cerere respinsă aici nu trebuie să coste
+  // nici măcar validare. Fiecare cerere acceptată declanșează muncă manuală
+  // de la admin și consumă din cota de email (F-02).
+  const limit = await limitVerification(await clientIp());
+  if (!limit.allowed) {
+    return { status: "error", error: retryMessage(limit.retryAfterSeconds) };
+  }
+
   // Parsarea se face prima, înainte de orice altă procesare: inputul vine de
   // la un vizitator neautentificat. Schema normalizează plăcuța și plafonează
   // lungimile — vezi src/lib/validation/verification.ts.
@@ -73,15 +81,10 @@ export async function createVerificationRequestAction(
     return { status: "error", error: "Nu am putut înregistra cererea. Încearcă din nou." };
   }
 
-  // Notificare admin — best-effort, nu blochează crearea cererii dacă
-  // trimiterea eșuează (vezi sendNewVerificationRequestEmail).
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  await sendNewVerificationRequestEmail({
-    requestId: id,
-    plate,
-    createdAt: createdAt.toISOString(),
-    appUrl,
-  });
+  // Adminul NU mai e notificat aici. Cererea rămâne cu admin_notified_at null
+  // și intră în următorul digest (/api/cron/verification-digest), ca un val de
+  // cereri automate să nu mai poată epuiza cota Resend de 100 email-uri/zi —
+  // vezi F-02. Consumul devine proporțional cu timpul, nu cu traficul.
 
   return { status: "created", id, token, plate, hasAccount: userId !== null };
 }

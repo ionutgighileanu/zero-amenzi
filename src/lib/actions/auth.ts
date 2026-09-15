@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PENDING_ORG_COOKIE } from "@/lib/constants";
+import { clientIp, limitLogin, limitSignup, retryMessage } from "@/lib/ratelimit";
 
 export type AuthActionState = { error?: string; status?: "confirm-email" } | null;
 
@@ -19,6 +20,13 @@ export async function signInAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  // Înainte de a atinge Supabase: fără asta, forța brută pe parole e
+  // nelimitată din partea noastră (F-02).
+  const limit = await limitLogin(await clientIp());
+  if (!limit.allowed) {
+    return { error: retryMessage(limit.retryAfterSeconds) };
+  }
+
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const redirectTo = safeRedirect(String(formData.get("redirectTo") ?? "/app/garage"));
@@ -37,6 +45,12 @@ export async function signUpAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  // Fiecare înscriere trimite un email de confirmare din cota Resend.
+  const limit = await limitSignup(await clientIp());
+  if (!limit.allowed) {
+    return { error: retryMessage(limit.retryAfterSeconds) };
+  }
+
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const accountType = String(formData.get("accountType") ?? "B2C");

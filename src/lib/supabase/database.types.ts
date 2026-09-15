@@ -311,6 +311,7 @@ export type Database = {
           completed_at: string | null;
           token: string;
           user_id: string | null;
+          admin_notified_at: string | null;
         };
         Insert: {
           id?: string;
@@ -327,6 +328,7 @@ export type Database = {
           completed_at?: string | null;
           token?: string;
           user_id?: string | null;
+          admin_notified_at?: string | null;
         };
         Update: {
           id?: string;
@@ -343,6 +345,7 @@ export type Database = {
           completed_at?: string | null;
           token?: string;
           user_id?: string | null;
+          admin_notified_at?: string | null;
         };
         Relationships: [];
       };
