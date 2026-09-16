@@ -1,4 +1,4 @@
-import { getWebPushClient } from "@/lib/push/client";
+import { getWebPushClient } from "@/lib/push/server";
 
 export type PushSubscriptionKeys = { endpoint: string; p256dh: string; auth: string };
 

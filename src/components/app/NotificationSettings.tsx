@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Switch } from "@/components/ui/Switch";
-import { isPushSupported, subscribePush, unsubscribePush } from "@/lib/push";
+import { isPushSupported, subscribePush, unsubscribePush } from "@/lib/push/browser";
 import { updateEmailNotificationsAction } from "@/lib/actions/settings";
 
 type NotificationSettingsProps = {

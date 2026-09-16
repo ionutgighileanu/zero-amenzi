@@ -1,6 +1,13 @@
 import webpush from "web-push";
 import { ADMIN_EMAIL } from "@/lib/constants";
 
+/**
+ * Cod de SERVER — citește VAPID_PRIVATE_KEY. Redenumit din client.ts (F-11):
+ * numele vechi era înșelător într-un director care mai avea și un modul
+ * client-side cu care se putea confunda. Nu importa niciodată acest fișier
+ * dintr-un "use client".
+ */
+
 let configured = false;
 
 /** Configurează VAPID pe modulul `web-push` (singleton la nivel de proces),

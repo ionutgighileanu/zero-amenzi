@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { BellRing, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { isPushSupported, subscribePush } from "@/lib/push";
+import { isPushSupported, subscribePush } from "@/lib/push/browser";
 import { MOBILE_VIEWPORT_QUERY } from "@/lib/constants";
 
 const SHOWN_KEY = "push_onboarding_shown";

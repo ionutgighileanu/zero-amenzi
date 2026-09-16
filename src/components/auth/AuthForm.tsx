@@ -61,9 +61,13 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
     // Salvăm intenția de firmă înainte de redirect — /auth/callback o citește
     // după ce Google confirmă identitatea (aceeași cheie ca la signup email).
     if (mode === "signup" && account === "B2B" && orgName.trim()) {
+      // `secure` doar pe https: setat necondiționat, browserul refuză silențios
+      // cookie-ul pe http://localhost în dev, și intenția de firmă s-ar pierde
+      // fără nicio eroare vizibilă (F-10).
+      const secure = window.location.protocol === "https:" ? "; secure" : "";
       document.cookie = `${PENDING_ORG_COOKIE}=${encodeURIComponent(
         JSON.stringify({ name: orgName.trim(), cui: cui.trim() })
-      )}; path=/; max-age=3600; samesite=lax`;
+      )}; path=/; max-age=3600; samesite=lax${secure}`;
     }
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
