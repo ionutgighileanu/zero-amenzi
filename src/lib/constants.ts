@@ -1,9 +1,29 @@
 export const BRAND_BLUE = "#003399";
 
-/** URL-ul public al aplicației. Folosit de sitemap și de metadataBase, ca
- * og:image și linkurile canonice să fie absolute. NEXT_PUBLIC_APP_URL îl
- * suprascrie pe medii de preview; fallback-ul e domeniul de producție. */
-export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://zero-amenzi.vercel.app";
+const FALLBACK_SITE_URL = "https://zero-amenzi.vercel.app";
+
+/**
+ * URL-ul public al aplicației, garantat absolut și fără slash final.
+ *
+ * Folosit de sitemap și de `metadataBase`, unde ajunge în `new URL()`. O
+ * valoare fără protocol („zero-amenzi.vercel.app") aruncă acolo, iar Next
+ * oprește build-ul cu „Invalid URL" — adică o variabilă de mediu scrisă
+ * neglijent în Vercel rupe deploy-ul, nu doar un link. De-aia normalizăm aici
+ * și cădem pe domeniul de producție dacă valoarea rămâne neparsabilă.
+ */
+function resolveSiteUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) return FALLBACK_SITE_URL;
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return FALLBACK_SITE_URL;
+  }
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 /** Cookie temporar: intenția de a crea o firmă la signup, folosit dacă
  * Supabase cere confirmare pe email înainte de a avea o sesiune activă. */
