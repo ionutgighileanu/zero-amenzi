@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
+import {
+  adminAddVehicleDocSchema,
+  adminUpdateVehicleDocSchema,
+} from "@/lib/validation/misc-actions";
 
 /**
  * Verifică sesiunea + emailul de admin înainte de orice mutație pe
@@ -20,10 +24,11 @@ async function requireAdmin() {
 }
 
 export async function adminAddVehicleDocAction(vehicleId: string, type: string, expiresAt: string) {
+  const input = adminAddVehicleDocSchema.parse({ vehicleId, type, expiresAt });
   const supabase = await requireAdmin();
   const { data, error } = await supabase
     .from("vehicle_docs")
-    .insert({ vehicle_id: vehicleId, type, expires_at: expiresAt })
+    .insert({ vehicle_id: input.vehicleId, type: input.type, expires_at: input.expiresAt })
     .select()
     .single();
 
@@ -38,10 +43,11 @@ export async function adminUpdateVehicleDocAction(
   vehicleId: string,
   patch: { type: string; expiresAt: string }
 ) {
+  const input = adminUpdateVehicleDocSchema.parse({ docId, vehicleId, patch });
   const supabase = await requireAdmin();
   const { data, error } = await supabase
     .from("vehicle_docs")
-    .update({ type: patch.type, expires_at: patch.expiresAt })
+    .update({ type: input.patch.type, expires_at: input.patch.expiresAt })
     .eq("id", docId)
     .select()
     .single();

@@ -47,6 +47,37 @@ export const PLATE_INPUT_MAX_LENGTH = 32;
 /** Plafon de lungime pe adresa de email primită de la vizitatori anonimi. */
 export const EMAIL_MAX_LENGTH = 254;
 
+/**
+ * Plafoane de lungime pe câmpurile text scrise de utilizatori autentificați.
+ *
+ * Coloanele din Postgres sunt `text`, deci nemărginite. Server Actions sunt
+ * endpoint-uri HTTP: oricine autentificat le poate apela direct, cu ce
+ * argumente vrea, ocolind interfața — deci limitele din UI nu sunt o
+ * protecție. Valorile sunt generoase față de datele reale, ca să nu respingă
+ * un caz legitim; rolul lor e să mărginească abuzul, nu să valideze conținutul.
+ */
+export const FIELD_MAX_LENGTH = {
+  /** VIN standard are 17 caractere; lăsăm loc pentru vehicule vechi/străine. */
+  vin: 32,
+  /** Nume șofer. */
+  driverName: 120,
+  /** Telefon, cu prefix internațional și separatoare. */
+  phone: 32,
+  /** Nume firmă. */
+  orgName: 200,
+  /** CUI românesc: „RO" + maximum 10 cifre. */
+  cui: 20,
+  /** Tip document sau atestat, inclusiv textul liber de la „Alt tip…". */
+  docType: 60,
+  /** Nume tip de alertă suplimentară. */
+  alertTypeName: 60,
+} as const;
+
+/** Plafon pe numărul de notificări marcate ca citite dintr-un singur apel.
+ * Clopoțelul trimite doar ce e pe ecran; un array nemărginit ar transforma
+ * acțiunea într-un update de masă. */
+export const MAX_NOTIFICATIONS_PER_BATCH = 200;
+
 /** Push notifications și PWA install se oferă doar pe mobile (D-017) — pe
  * desktop push are conversie mică, iar fereastra PWA fără browser chrome pare
  * un bug. Folosit de PushOnboarding și InstallBanner, deci pragul se schimbă

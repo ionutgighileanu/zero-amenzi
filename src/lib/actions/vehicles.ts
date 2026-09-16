@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { plausibleDocDates } from "@/lib/vehicles";
-import { normalizePlate } from "@/lib/plate";
+import {
+  addVehicleDocSchema,
+  addVehicleSchema,
+  deleteVehicleDocSchema,
+  vehicleByIdSchema,
+} from "@/lib/validation/vehicles";
 
 export type VehicleScope =
   | { ownerId: string; orgId?: undefined }
@@ -15,16 +20,16 @@ function scopePath(scope: Scope, orgIdForPath?: string) {
 }
 
 export async function addVehicleAction(scope: Scope, plate: string, vin: string) {
+  // Schema normalizează plăcuța la forma canonică pentru numerele RO și
+  // plafonează VIN-ul — vezi src/lib/validation/vehicles.ts.
+  const input = addVehicleSchema.parse({ scope, plate, vin });
   const supabase = await createClient();
 
   const { data: vehicle, error } = await supabase
     .from("vehicles")
     .insert({
-      // Formă canonică pentru plăcuțele RO („b12abc" -> „B 12 ABC"), ca
-      // aceeași mașină să nu ajungă în DB scrisă în mai multe feluri. O
-      // plăcuță străină trece neatinsă — vezi normalizePlate.
-      plate: normalizePlate(plate),
-      vin: vin.trim().toUpperCase(),
+      plate: input.plate,
+      vin: input.vin,
       owner_id: scope.ownerId ?? null,
       org_id: scope.orgId ?? null,
     })
@@ -52,6 +57,7 @@ export async function addVehicleAction(scope: Scope, plate: string, vin: string)
 }
 
 export async function softDeleteVehicleAction(id: string, scope: Scope) {
+  vehicleByIdSchema.parse({ id, scope });
   const supabase = await createClient();
   const { error } = await supabase
     .from("vehicles")
@@ -62,6 +68,7 @@ export async function softDeleteVehicleAction(id: string, scope: Scope) {
 }
 
 export async function undoDeleteVehicleAction(id: string, scope: Scope) {
+  vehicleByIdSchema.parse({ id, scope });
   const supabase = await createClient();
   const { error } = await supabase.from("vehicles").update({ deleted_at: null }).eq("id", id);
   if (error) throw new Error("Nu am putut anula ștergerea.");
@@ -74,10 +81,11 @@ export async function addVehicleDocAction(
   expiresAt: string,
   scope: Scope
 ) {
+  const input = addVehicleDocSchema.parse({ vehicleId, type, expiresAt, scope });
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vehicle_docs")
-    .insert({ vehicle_id: vehicleId, type, expires_at: expiresAt })
+    .insert({ vehicle_id: input.vehicleId, type: input.type, expires_at: input.expiresAt })
     .select()
     .single();
   if (error || !data) throw new Error("Nu am putut adăuga documentul.");
@@ -86,6 +94,7 @@ export async function addVehicleDocAction(
 }
 
 export async function deleteVehicleDocAction(docId: string, scope: Scope) {
+  deleteVehicleDocSchema.parse({ docId, scope });
   const supabase = await createClient();
   const { error } = await supabase.from("vehicle_docs").delete().eq("id", docId);
   if (error) throw new Error("Nu am putut șterge documentul.");

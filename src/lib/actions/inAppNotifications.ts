@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notificationIdSchema } from "@/lib/validation/misc-actions";
 
 /**
  * Marchează o notificare din tabela `notifications` ca citită. RLS permite
@@ -9,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
  * suplimentară aici — un id străin pur și simplu nu atinge niciun rând.
  */
 export async function markInAppNotificationReadAction(id: string) {
+  notificationIdSchema.parse(id);
   const supabase = await createClient();
   const { error } = await supabase
     .from("notifications")
