@@ -75,17 +75,31 @@ const loginLimiter = makeLimiter(10, "10 m", "login");
 const signupLimiter = makeLimiter(5, "1 h", "signup");
 
 /**
- * IP-ul clientului din headerele de proxy. Pe Vercel, `x-forwarded-for` e
- * setat de platformă și primul element e IP-ul real al clientului.
+ * Atașarea emailului pe o cerere: 10/oră. Public, neautentificat, lovește un
+ * RPC SECURITY DEFINER. Separat de limita de verificare ca atașarea firească
+ * de după crearea cererii să nu consume din cele 4 cereri/oră.
+ */
+const attachEmailLimiter = makeLimiter(10, "1 h", "attach-email");
+
+/**
+ * IP-ul clientului din headerele de proxy.
+ *
+ * `x-real-ip` are prioritate: pe Vercel e scris de platformă din conexiunea
+ * reală și nu poate fi influențat de client. `x-forwarded-for` e fallback —
+ * e o listă la care orice hop poate ADĂUGA, iar „primul element" e exact
+ * ce ar falsifica un client ca să-și schimbe cheia de rate limit. Îl luăm
+ * doar când nu există altceva.
  *
  * Atenție: mulți utilizatori din România sunt în spatele CGNAT la operatorii
  * mobili, deci pot împărți un IP. De-aia pragurile de mai sus nu sunt agresive.
  */
 export async function clientIp(): Promise<string> {
   const h = await headers();
+  const real = h.get("x-real-ip")?.trim();
+  if (real) return real;
   const forwarded = h.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
-  return h.get("x-real-ip") ?? "ip-necunoscut";
+  return "ip-necunoscut";
 }
 
 type LimitResult = { allowed: boolean; retryAfterSeconds: number };
@@ -117,6 +131,10 @@ export async function limitLogin(ip: string) {
 
 export async function limitSignup(ip: string) {
   return check(signupLimiter, ip);
+}
+
+export async function limitAttachEmail(ip: string) {
+  return check(attachEmailLimiter, ip);
 }
 
 /** Mesaj de așteptare în română, din secunde. */

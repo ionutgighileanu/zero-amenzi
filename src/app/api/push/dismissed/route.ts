@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { uuidSchema } from "@/lib/validation/common";
 
 /** Apelat din sw.ts la "notificationclose" — best-effort (browserul nu
  * garantează că cererea ajunge la timp la închiderea tab-ului). Marchează
@@ -19,7 +20,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  if (!notificationId) {
+  // uuid explicit: fără asta un id malformat ajungea în Postgres și se
+  // întorcea ca 500 generic în loc de 400 clar. RLS limitează oricum la
+  // rândurile proprii, deci e igienă, nu barieră.
+  if (!notificationId || !uuidSchema.safeParse(notificationId).success) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 

@@ -32,6 +32,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
+  // Cheile reale au ~88 (p256dh) și ~24 (auth) caractere base64url. Fără
+  // plafon, coloanele `text` acceptau orice dimensiune; același plafon e și
+  // CHECK în DB (migrarea 20260916120000), aici doar dăm 400 în loc de 500.
+  if (
+    typeof keys.p256dh !== "string" ||
+    typeof keys.auth !== "string" ||
+    keys.p256dh.length > 256 ||
+    keys.auth.length > 256 ||
+    endpoint.length > 2048
+  ) {
+    return NextResponse.json({ error: "invalid_fields" }, { status: 400 });
+  }
+
   // Fără asta, un endpoint arbitrar salvat aici devine, la fiecare alertă, o
   // cerere HTTP a serverului către oriunde a ales atacatorul (F-04) — vezi
   // src/lib/push/allowed-endpoints.ts.

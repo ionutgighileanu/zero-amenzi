@@ -63,5 +63,29 @@ export const attachVerificationEmailSchema = z.object({
   email: emailSchema,
 });
 
+/**
+ * Completarea rezultatului de către admin. Acțiunea e deja gate-uită pe
+ * ADMIN_EMAIL, iar DB-ul are CHECK pe valorile rezultatului — schema e
+ * pentru consistență cu restul acțiunilor (F-07) și pentru un mesaj clar în
+ * loc de un eșec opac de update.
+ */
+const resultValueSchema = z.enum(["valid", "expirat", "nu_gasit"]);
+const optionalDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Data trebuie să fie în formatul AAAA-LL-ZZ." })
+  .nullable();
+
+export const completeVerificationSchema = z.object({
+  id: z.uuid({ message: "Identificator invalid." }),
+  results: z.object({
+    itp: resultValueSchema,
+    rca: resultValueSchema,
+    rovinieta: resultValueSchema,
+    itpExpires: optionalDateSchema,
+    rcaExpires: optionalDateSchema,
+    rovinietaExpires: optionalDateSchema,
+  }),
+});
+
 export type CreateVerificationRequestInput = z.infer<typeof createVerificationRequestSchema>;
 export type AttachVerificationEmailInput = z.infer<typeof attachVerificationEmailSchema>;

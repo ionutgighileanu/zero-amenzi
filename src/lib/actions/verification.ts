@@ -8,9 +8,10 @@ import { createVerificationNotification } from "@/lib/verificationNotification";
 import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
 import {
   attachVerificationEmailSchema,
+  completeVerificationSchema,
   createVerificationRequestSchema,
 } from "@/lib/validation/verification";
-import { clientIp, limitVerification, retryMessage } from "@/lib/ratelimit";
+import { clientIp, limitAttachEmail, limitVerification, retryMessage } from "@/lib/ratelimit";
 
 export type CreateVerificationState =
   | { status: "idle" }
@@ -95,6 +96,12 @@ export async function createVerificationRequestAction(
  * fiindcă UPDATE direct pe tabelă e admin-only — vezi migrarea.
  */
 export async function attachVerificationEmailAction(token: string, email: string) {
+  // Public și neautentificat, lovește un RPC SECURITY DEFINER — are propria
+  // limită, ca atașarea firească de după creare să nu consume din cele
+  // 4 cereri/oră ale verificării.
+  const limit = await limitAttachEmail(await clientIp());
+  if (!limit.allowed) return;
+
   // Tokenul ajunge într-un RPC SECURITY DEFINER, iar emailul devine
   // destinatarul efectiv al rezultatului — ambele se validează înainte (F-06).
   const parsed = attachVerificationEmailSchema.safeParse({ token, email });
@@ -118,6 +125,7 @@ export type CompleteVerificationInput = {
 };
 
 export async function completeVerificationAction(id: string, results: CompleteVerificationInput) {
+  const input = completeVerificationSchema.parse({ id, results });
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (auth.user?.email !== ADMIN_EMAIL) {
@@ -129,14 +137,14 @@ export async function completeVerificationAction(id: string, results: CompleteVe
     .update({
       status: "completed",
       completed_at: new Date().toISOString(),
-      result_itp: results.itp,
-      result_rca: results.rca,
-      result_rovinieta: results.rovinieta,
-      result_itp_expires: results.itpExpires,
-      result_rca_expires: results.rcaExpires,
-      result_rovinieta_expires: results.rovinietaExpires,
+      result_itp: input.results.itp,
+      result_rca: input.results.rca,
+      result_rovinieta: input.results.rovinieta,
+      result_itp_expires: input.results.itpExpires,
+      result_rca_expires: input.results.rcaExpires,
+      result_rovinieta_expires: input.results.rovinietaExpires,
     })
-    .eq("id", id)
+    .eq("id", input.id)
     .select()
     .single();
 
