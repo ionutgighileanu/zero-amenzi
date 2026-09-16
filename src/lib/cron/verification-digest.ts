@@ -1,9 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendVerificationDigestEmail, type DigestRequest } from "@/lib/email/send-verification-digest";
 
-/** Plafon per rulare: un digest cu sute de rânduri e nefolositor, iar dacă
- * s-au adunat atâtea cereri, următoarea rulare le ia pe restul. */
-const MAX_PER_DIGEST = 50;
+/** Plafon per rulare. Cronul rulează o dată pe zi (schedule „0 8 * * *" în
+ * vercel.json — cadența la 15 minute cerea Vercel Pro), deci între două
+ * rulări se pot aduna până la câteva sute de cereri; 500 acoperă un vârf de
+ * trafic pe o zi întreagă fără să lase cereri neanunțate. Dacă totuși se
+ * depășește, restul intră în digestul zilei următoare. */
+const MAX_PER_DIGEST = 500;
 
 export type DigestResult = { found: number; sent: number };
 
