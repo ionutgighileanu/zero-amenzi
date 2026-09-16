@@ -1,5 +1,10 @@
 export const BRAND_BLUE = "#003399";
 
+/** URL-ul public al aplicației. Folosit de sitemap și de metadataBase, ca
+ * og:image și linkurile canonice să fie absolute. NEXT_PUBLIC_APP_URL îl
+ * suprascrie pe medii de preview; fallback-ul e domeniul de producție. */
+export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://zero-amenzi.vercel.app";
+
 /** Cookie temporar: intenția de a crea o firmă la signup, folosit dacă
  * Supabase cere confirmare pe email înainte de a avea o sesiune activă. */
 export const PENDING_ORG_COOKIE = "ad_pending_org";

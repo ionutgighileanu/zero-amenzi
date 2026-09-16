@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_ALERT_TYPES } from "@/lib/constants";
 import { mapVehicleRow } from "@/lib/vehicles";
 import { GarageBoard } from "@/components/app/GarageBoard";
+
+export const metadata: Metadata = {
+  title: "Garajul meu — AutoDocs",
+  description:
+    "Garajul tău personal: toate mașinile, documentele și datele lor de expirare într-un singur loc, cu alerte automate înainte să expire ceva.",
+};
 
 export default async function GaragePage() {
   const supabase = await createClient();

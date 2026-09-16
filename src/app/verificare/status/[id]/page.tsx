@@ -9,7 +9,11 @@ import { formatDateTime } from "@/lib/status";
 import { describeResult, type ResultTone } from "@/lib/verification";
 import type { Database } from "@/lib/supabase/database.types";
 
-export const metadata: Metadata = { title: "Statusul verificării — AutoDocs" };
+export const metadata: Metadata = {
+  title: "Statusul verificării — AutoDocs",
+  description:
+    "Urmărește în timp real starea cererii tale de verificare. Îți arătăm rezultatul pentru ITP, RCA și rovinietă imediat ce verificarea e finalizată.",
+};
 
 type VerificationRow = Database["public"]["Tables"]["verification_requests"]["Row"];
 

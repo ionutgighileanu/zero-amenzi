@@ -14,6 +14,12 @@ import {
 
 const initialState: CreateVerificationState = { status: "idle" };
 
+/** Verificare permisivă, doar cât să prindem greșelile evidente înainte de
+ * trimitere. Validarea strictă rămâne pe server (src/lib/validation/
+ * verification.ts) — asta e doar ca utilizatorul să afle imediat, nu după ce
+ * a fost deja navigat mai departe. */
+const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 export function VerificationForm() {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(createVerificationRequestAction, initialState);
@@ -40,7 +46,11 @@ export function VerificationForm() {
               <span>RO</span>
             </div>
           </div>
+          <label htmlFor="plate" className="sr-only">
+            Număr de înmatriculare
+          </label>
           <input
+            id="plate"
             name="plate"
             placeholder="B 100 ABC"
             disabled={pending}
@@ -90,14 +100,27 @@ function VerificationStartedModal({
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
 
   const openProgress = async () => {
+    const trimmed = email.trim();
+
+    // Fără verificarea asta, acțiunea de pe server respingea tăcut un email
+    // invalid (safeParse eșua și ieșea din funcție), iar utilizatorul era dus
+    // mai departe crezând că va primi rezultatul pe email. Nu-l primea
+    // niciodată și nu afla de ce.
+    if (trimmed && !EMAIL_PATTERN.test(trimmed)) {
+      setEmailError("Adresa de email nu pare validă. Verific-o sau lasă câmpul gol.");
+      return;
+    }
+
+    setEmailError(null);
     setNavigating(true);
     // Emailul se atașează prin token (RPC-ul e keyed pe token, vezi migrarea);
     // navigarea folosește id-ul, care e identificatorul paginii de status.
-    if (email.trim()) {
-      await attachVerificationEmailAction(token, email);
+    if (trimmed) {
+      await attachVerificationEmailAction(token, trimmed);
     }
     router.push(`/verificare/status/${id}`);
   };
@@ -109,14 +132,26 @@ function VerificationStartedModal({
           Verificăm actele pentru <strong>{plate}</strong>. Îți trimitem rezultatul pe email
           de îndată ce e gata.
         </p>
-        <Input
-          label="Email"
-          type="email"
-          placeholder="email@exemplu.ro (opțional)"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={navigating}
-        />
+        <div>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="email@exemplu.ro (opțional)"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            disabled={navigating}
+            aria-invalid={emailError !== null}
+            aria-describedby={emailError ? "email-eroare" : undefined}
+          />
+          {emailError && (
+            <p id="email-eroare" className="text-sm text-red-600 mt-1.5" role="alert">
+              {emailError}
+            </p>
+          )}
+        </div>
         <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
           <Button variant="outline" size="sm" onClick={onClose} className="flex-1" disabled={navigating}>
             Închide

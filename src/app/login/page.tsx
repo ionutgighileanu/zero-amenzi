@@ -6,6 +6,8 @@ import { AuthForm } from "@/components/auth/AuthForm";
 
 export const metadata: Metadata = {
   title: "Conectare — AutoDocs",
+  description:
+    "Intră în contul tău Zero Amenzi ca să îți vezi mașinile, documentele salvate și alertele configurate pentru expirarea actelor auto.",
 };
 
 export default async function LoginPage() {

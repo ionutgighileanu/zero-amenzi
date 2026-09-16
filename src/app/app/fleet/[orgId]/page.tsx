@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_ALERT_TYPES } from "@/lib/constants";
 import { mapDriverRow, mapVehicleRow } from "@/lib/vehicles";
 import { FleetBoard } from "@/components/app/FleetBoard";
+
+export const metadata: Metadata = {
+  title: "Flota — AutoDocs",
+  description:
+    "Panoul flotei: toate vehiculele și șoferii firmei, cu starea documentelor și alerte centralizate înainte de expirarea actelor sau atestatelor.",
+};
 
 export default async function FleetPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;

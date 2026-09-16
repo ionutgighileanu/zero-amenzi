@@ -5,6 +5,8 @@ import { NotificationSettings } from "@/components/app/NotificationSettings";
 
 export const metadata: Metadata = {
   title: "Preferințe alerte — AutoDocs",
+  description:
+    "Alege cum vrei să primești alertele înainte de expirarea actelor auto: pe email, prin notificări push sau în aplicație. Le poți schimba oricând.",
 };
 
 export default async function SettingsPage() {

@@ -6,6 +6,8 @@ import { AuthForm } from "@/components/auth/AuthForm";
 
 export const metadata: Metadata = {
   title: "Creează cont — AutoDocs",
+  description:
+    "Creează gratuit un cont pentru mașina personală sau pentru flota firmei. Primești alerte automate înainte să expire ITP-ul, RCA-ul sau rovinieta.",
 };
 
 export default async function SignupPage({

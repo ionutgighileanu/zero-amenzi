@@ -5,7 +5,8 @@ import { VerificationForm } from "@/components/VerificationForm";
 
 export const metadata: Metadata = {
   title: "Verifică ITP, RCA și rovinieta — AutoDocs",
-  description: "Introdu numărul de înmatriculare. Îți spunem ce acte au expirat.",
+  description:
+    "Introdu numărul de înmatriculare și afli în câteva secunde dacă ITP-ul, RCA-ul și rovinieta sunt valabile. Gratuit, fără cont și fără date personale.",
 };
 
 export default function VerificarePage() {

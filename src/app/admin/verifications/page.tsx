@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
 import { VerificationsAdminBoard } from "@/components/admin/VerificationsAdminBoard";
 
-export const metadata: Metadata = { title: "Cereri de verificare — Admin" };
+export const metadata: Metadata = {
+  title: "Cereri de verificare — Admin",
+  description:
+    "Panou intern pentru gestionarea cererilor publice de verificare a actelor auto primite de la vizitatorii site-ului Zero Amenzi.",
+};
 
 export default async function AdminVerificationsPage({
   searchParams,

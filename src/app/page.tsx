@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import {
   Shield,
   ChevronRight,
@@ -19,6 +21,13 @@ import { InstallBanner } from "@/components/ui/InstallBanner";
 import { VerificationForm } from "@/components/VerificationForm";
 import { Nav } from "@/components/landing/Nav";
 import { Faq } from "@/components/landing/Faq";
+import { StickyMobileCta } from "@/components/landing/StickyMobileCta";
+import { ADMIN_EMAIL } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  description:
+    "Verifică gratuit dacă ITP-ul, RCA-ul și rovinieta mașinii tale sunt valabile. Primești alerte pe email înainte de expirare, ca să nu iei amenzi.",
+};
 
 function Section({
   children,
@@ -82,7 +91,7 @@ export default function Home() {
               Introdu numărul de înmatriculare. Îți spunem ce acte au expirat —
               ITP, RCA, rovinietă. Pentru mașina personală sau pentru toată flota.
             </p>
-            <div className="mt-8">
+            <div className="mt-8" id="verificare-hero">
               <VerificationForm />
             </div>
             <p className="text-xs text-slate-400 mt-2.5">
@@ -151,7 +160,7 @@ export default function Home() {
             ].map(([title, amount, desc]) => (
               <div key={title} className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle size={15} className="text-slate-400 shrink-0" />
+                  <AlertTriangle size={15} aria-hidden="true" className="text-slate-400 shrink-0" />
                   <span className="text-sm font-semibold text-slate-300">{title}</span>
                 </div>
                 <p className="text-2xl sm:text-3xl font-black text-white leading-none mb-2 font-display">
@@ -176,11 +185,10 @@ export default function Home() {
             ["Verificare ITP", "Inspecția tehnică periodică — valabilă sau expirată?"],
             ["Verificare RCA", "Asigurarea obligatorie — e activă polița?"],
             ["Verificare Rovinietă", "Taxa de drum — activă sau expirată?"],
-            ["Calculator RCA", "Compară prețuri de la mai mulți asigurători."],
           ].map(([title, desc]) => (
-            <a
+            <Link
               key={title}
-              href="#"
+              href="/verificare"
               className="group flex items-center justify-between gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             >
               <div>
@@ -189,9 +197,10 @@ export default function Home() {
               </div>
               <ArrowRight
                 size={16}
+                aria-hidden="true"
                 className="text-slate-400 group-hover:text-slate-700 shrink-0 transition-colors"
               />
-            </a>
+            </Link>
           ))}
         </div>
       </Section>
@@ -212,13 +221,13 @@ export default function Home() {
                 Conectează firma
               </Button>
               <Button variant="ghost" href="#cum-functioneaza">
-                Cum funcționează <ChevronRight size={16} />
+                Cum funcționează <ChevronRight size={16} aria-hidden="true" />
               </Button>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-3">
-              <Truck size={15} className="text-slate-400" />
+              <Truck size={15} aria-hidden="true" className="text-slate-400" />
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 Flotă — 3 vehicule
               </span>
@@ -414,7 +423,7 @@ export default function Home() {
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
-                  <Shield className="text-white" size={14} />
+                  <Shield className="text-white" size={14} aria-hidden="true" />
                 </span>
                 <span className="font-extrabold text-sm font-display">AutoDocs</span>
               </div>
@@ -424,10 +433,26 @@ export default function Home() {
               </p>
             </div>
 
+            {/* Doar linkuri care duc undeva. Secțiunile „Verificări" și
+                „Resurse" au fost scoase: trimiteau către pagini care nu există
+                încă (le adăugăm în Faza 4), iar un link mort în footer e mai
+                rău decât absența lui. */}
             {[
-              ["Verificări", [["Verificare ITP", "#"], ["Verificare RCA", "#"], ["Verificare Rovinietă", "#"], ["Calculator RCA", "#"]]],
-              ["Resurse", [["Amenzi auto 2026", "#"], ["Acte necesare", "#"], ["Stații ITP", "#"], ["Blog", "#"]]],
-              ["Legal", [["Termeni și Condiții", "#"], ["Confidențialitate", "#"], ["Contact", "#"]]],
+              [
+                "Produs",
+                [
+                  ["Verifică actele", "/verificare"],
+                  ["Creează cont", "/signup"],
+                  ["Conectare", "/login"],
+                ],
+              ],
+              [
+                "Legal",
+                [
+                  ["Politica de confidențialitate", "/politica-confidentialitate"],
+                  ["Termeni și condiții", "/termeni"],
+                ],
+              ],
             ].map(([title, links]) => (
               <div key={title as string}>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
@@ -436,23 +461,39 @@ export default function Home() {
                 <ul className="space-y-2">
                   {(links as [string, string][]).map(([label, href]) => (
                     <li key={label}>
-                      <a href={href} className="text-sm text-slate-600 hover:text-slate-900">
+                      <Link href={href} className="text-sm text-slate-600 hover:text-slate-900">
                         {label}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
               </div>
             ))}
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Contact
+              </p>
+              <a
+                href={`mailto:${ADMIN_EMAIL}`}
+                className="text-sm text-slate-600 hover:text-slate-900 break-all"
+              >
+                {ADMIN_EMAIL}
+              </a>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                Scrie-ne pentru întrebări, probleme sau cereri legate de datele tale.
+              </p>
+            </div>
           </div>
 
           <div className="mt-10 pt-6 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3">
-            <p className="text-xs text-slate-400">© 2026 AutoDocs. Toate drepturile rezervate.</p>
+            <p className="text-xs text-slate-400">© 2026 Zero Amenzi. Toate drepturile rezervate.</p>
             <p className="text-xs text-slate-400">Un produs românesc.</p>
           </div>
         </div>
       </footer>
       <InstallBanner />
+      <StickyMobileCta targetId="verificare-hero" />
     </div>
   );
 }

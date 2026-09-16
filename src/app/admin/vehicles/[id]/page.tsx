@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
 import { VehicleDetails } from "@/components/admin/VehicleDetails";
 
-export const metadata: Metadata = { title: "Vehicul — Admin" };
+export const metadata: Metadata = {
+  title: "Vehicul — Admin",
+  description:
+    "Panou intern pentru adăugarea și actualizarea manuală a documentelor unui vehicul: ITP, RCA, rovinietă și alte tipuri de alerte configurate.",
+};
 
 export default async function AdminVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

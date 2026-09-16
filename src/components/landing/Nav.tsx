@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Shield, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -17,14 +18,14 @@ export function Nav() {
   return (
     <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 flex justify-between items-center h-14">
-        <a href="#" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center">
-            <Shield className="text-white" size={17} />
+            <Shield className="text-white" size={17} aria-hidden="true" />
           </span>
           <span className="text-lg font-extrabold tracking-tight font-display">
             AutoDocs
           </span>
-        </a>
+        </Link>
 
         <div className="hidden md:flex items-center gap-6 text-sm">
           {LINKS.map(([href, label]) => (
@@ -45,7 +46,7 @@ export function Nav() {
           onClick={() => setMobileMenu(!mobileMenu)}
           aria-label="Meniu"
         >
-          {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+          {mobileMenu ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         </button>
       </div>
       {mobileMenu && (
