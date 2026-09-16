@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isAllowedPushEndpoint } from "@/lib/push/allowed-endpoints";
 
 type SubscribeBody = {
   endpoint?: string;
@@ -29,6 +30,13 @@ export async function POST(request: Request) {
   const { endpoint, keys } = body;
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
+  }
+
+  // Fără asta, un endpoint arbitrar salvat aici devine, la fiecare alertă, o
+  // cerere HTTP a serverului către oriunde a ales atacatorul (F-04) — vezi
+  // src/lib/push/allowed-endpoints.ts.
+  if (!isAllowedPushEndpoint(endpoint)) {
+    return NextResponse.json({ error: "invalid_endpoint" }, { status: 400 });
   }
 
   await supabase
