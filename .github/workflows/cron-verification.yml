@@ -1,0 +1,46 @@
+name: Verification Digest Cron
+
+# Cronul de digest a fost mutat aici de pe Vercel: planul Hobby permite
+# cron-uri doar o dată pe zi, iar o expresie mai deasă face ca Vercel să
+# RESPINGĂ deployment-ul, nu doar să ignore cronul (vezi D-018).
+#
+# Repo-ul e public, deci minutele de Actions sunt gratuite și nelimitate.
+
+on:
+  schedule:
+    # La fiecare 15 minute. GitHub rulează cron-urile „best effort": la ore de
+    # vârf pot întârzia cu 5-20 de minute, deci spațierea reală e neregulată.
+    # Acceptabil aici — digestul e o notificare, nu ceva cu termen strict.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # permite și rulare manuală din GitHub UI
+
+# Dacă o rulare se blochează, următoarea nu se suprapune peste ea.
+concurrency:
+  group: verification-digest
+  cancel-in-progress: false
+
+jobs:
+  run-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call verification digest endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::Secretul CRON_SECRET nu e setat în repo. Vezi Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          # `--fail-with-body` e esențial: fără el, curl iese cu 0 chiar și pe
+          # 401 sau 405, iar workflow-ul ar apărea verde fără să fi rulat
+          # digestul. Ruta acceptă GET, nu POST — un POST întoarce 405.
+          curl --fail-with-body \
+               --silent --show-error \
+               --retry 3 --retry-delay 5 --retry-connrefused \
+               --max-time 60 \
+               -H "Authorization: Bearer ${CRON_SECRET}" \
+               "https://zero-amenzi.vercel.app/api/cron/verification-digest"

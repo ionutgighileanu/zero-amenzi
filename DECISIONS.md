@@ -213,3 +213,29 @@ se aplică identic vizitatorului de pe landing, nu doar utilizatorului din dashb
 
 Aș reveni dacă: Utilizatorii cer explicit PWA install pe desktop pentru 
 acces rapid separat de tab-uri de browser.
+
+## D-018 · 2026-09 · Cron verification-digest mutat pe GitHub Actions
+
+Context: Vercel Hobby permite cron-uri doar o dată pe zi.
+verification-digest la */15 * * * * bloca toate deploy-urile.
+
+Decizie: GitHub Actions apelează ruta /api/cron/verification-digest
+la fiecare 15 minute cu CRON_SECRET. Ruta rămâne neschimbată.
+check-expiries rămâne pe Vercel (zilnic, 08:00 UTC).
+
+De ce: GitHub Actions e gratuit, fără limită de frecvență,
+și nu blochează deploy-urile Vercel. Repo-ul e public, deci minutele
+de Actions sunt nelimitate — pe un repo privat, 96 de rulări pe zi ar
+fi depășit cota gratuită de 2000 minute/lună.
+
+Două detalii de implementare care nu sunt evidente:
+- Ruta exportă doar GET. Un POST întoarce 405, iar `curl` fără
+  `--fail-with-body` iese cu cod 0 chiar și atunci — workflow-ul ar fi
+  apărut verde la fiecare rulare fără să fi trimis vreun digest.
+- Cron-urile GitHub rulează „best effort": la ore de vârf pot întârzia
+  cu 5-20 de minute, deci spațierea reală e neregulată. Acceptabil
+  pentru o notificare fără termen strict.
+
+Aș reveni dacă: Trecem pe Vercel Pro (atunci cronul se mută înapoi în
+vercel.json, mai aproape de restul configurației), sau dacă întârzierile
+GitHub devin o problemă reală pentru timpul de răspuns către solicitanți.
