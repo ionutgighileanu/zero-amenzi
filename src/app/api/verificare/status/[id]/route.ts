@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clientIp, limitVerificationStatus } from "@/lib/ratelimit";
 import { toStatusResponse, type VerificationStatusResponse } from "@/lib/verificationStatus";
 import { VERIFICATION_STATUS_CACHE_SECONDS } from "@/lib/constants";
 
@@ -48,6 +49,23 @@ function writeCache(id: string, payload: VerificationStatusResponse | null) {
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  // Ruta citește cu service_role și n-are autentificare, deci plafonul pe IP e
+  // singura limită. Verificat înaintea cache-ului: altfel o rafală pe id-uri
+  // diferite ar trece neatinsă, iar exact aceea e cea care ajunge la DB.
+  const { allowed, retryAfterSeconds } = await limitVerificationStatus(await clientIp());
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Prea multe cereri. Încearcă mai târziu." },
+      {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(Math.max(1, retryAfterSeconds)),
+        },
+      }
+    );
+  }
 
   const cached = readCache(id);
   if (cached) return respond(cached.payload);

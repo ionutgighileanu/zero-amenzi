@@ -8,6 +8,14 @@ import { checkExpiries } from "@/lib/cron/check-expiries";
  * ca nimeni din afară să nu poată declanșa manual trimiterea de alerte.
  */
 export async function GET(request: Request) {
+  // Fără guardul ăsta, un CRON_SECRET nesetat făcea ca valoarea așteptată să
+  // devină literal "Bearer undefined" — deci oricine trimitea exact headerul
+  // acela declanșa trimiterea de alerte și consuma cota Resend.
+  if (!process.env.CRON_SECRET) {
+    console.error("[cron] CRON_SECRET nesetat — refuz să rulez check-expiries.");
+    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 503 });
+  }
+
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -417,3 +417,80 @@ Aș reveni dacă: Adăugăm un script extern (analytics, widget de plată) — a
 connect-src și script-src trebuie extinse explicit, nu lărgite cu wildcard. Sau
 dacă trecem pe nonce, moment în care `'unsafe-inline'` din script-src dispare și
 CSP-ul devine o apărare reală contra XSS.
+
+## D-022 · 2026-09 · RLS hardening post-audit
+
+Context: audit complet al politicilor RLS pe cele șapte categorii (SELECT
+nelimitat, escaladare de privilegii, cross-tenant, bypass admin, INSERT/UPDATE
+nerestricționat, DELETE, service_role). Izolarea între spații s-a dovedit
+solidă — nicio cale de acces cross-tenant la vehicule, documente sau spații.
+Restul constatărilor sunt reparate aici.
+
+6 probleme găsite și reparate:
+
+1. **CRON_SECRET missing guard (critic — rută deschisă).** Comparația
+   `authHeader !== \`Bearer ${process.env.CRON_SECRET}\`` devenea, cu variabila
+   nesetată, o comparație cu literalul `"Bearer undefined"`. Oricine trimitea
+   exact acel header declanșa cronul de alerte, consumând cota Resend de 100
+   email-uri/zi — DoS pe canalul de notificări, fără cont, de la orice IP.
+   Ambele rute de cron resping acum cu 503 dacă secretul lipsește.
+
+2. **users.email revoke update.** `users_update_own` permitea UPDATE pe orice
+   coloană a rândului propriu, iar check-expiries citește destinatarul din
+   `public.users.email` — deci un utilizator putea pune adresa unui terț și
+   folosi contul nostru Resend ca să trimită acolo.
+
+3. **notifications_log restricționat la read_at + push_clicked_at /
+   push_dismissed_at.** Înainte, orice membru putea rescrie `email_sent_at`,
+   `push_sent_at`, `sent_at` sau `doc_type`, adică să-și falsifice istoricul de
+   alerte. Cele două coloane de push rămân scriibile deliberat: rutele
+   /api/push/clicked și /api/push/dismissed le scriu cu clientul autentificat
+   al userului, nu cu service_role.
+
+4. **memberships delete — ownerul nu poate fi scos.** Un admin de flotă putea
+   șterge membership-ul ownerului, care pierdea `is_space_member` și rămânea
+   blocat în afara propriei flote. Preluarea nu era posibilă (autoritatea stă
+   în `spaces.owner_id`, cu UPDATE revocat), doar blocarea.
+
+5. **plate rename — verificare trial la UPDATE.** Triggerul verifica
+   `plate_trials` doar la INSERT. Adăugai plăcuța A (consumând trialul lui A),
+   o redenumeai în B, și obțineai acoperire gratuită pe B fără ca B să fie
+   marcată ca folosită. Triggerul de UPDATE verifică acum și consumă plăcuța
+   nouă; pe cea veche NU o eliberează, altfel redenumirea în cerc ar da trial
+   nelimitat.
+
+6. **Policy-uri admin recreate pe vehicles/vehicle_docs.** Create în
+   20260817120000, pierdute când 20260917100000 a făcut `drop table ... cascade`
+   pe ambele tabele. Panoul /admin/vehicles/[id] primea null pentru vehiculul
+   altui utilizator și cădea pe notFound(). Eșua închis, deci nu era breșă —
+   dar era rupt. Recreate exact cele patru originale, deliberat fără UPDATE pe
+   vehicles: nicio rută de admin nu modifică vehiculul în sine.
+
+Bonus: rate limit 240/oră per IP pe `/api/verificare/status/[id]`, ruta publică
+citită cu service_role. Plafonul e calibrat pe polling-ul real (60s interval,
+până la 24h ⇒ ~60 cereri/oră per tab), cu loc pentru câteva taburi sau mai
+mulți utilizatori în spatele aceluiași CGNAT.
+
+**Descoperire colaterală, mai importantă decât oricare fix de mai sus:
+`revoke update (coloană)` e probabil fără efect pe acest proiect.** În Postgres
+privilegiile de tabel și de coloană sunt straturi independente, iar un UPDATE
+trece dacă rolul are dreptul la nivel de tabel SAU pe coloană. Nu există grant
+negativ. Supabase acordă implicit `grant all on all tables in schema public`
+pentru anon și authenticated — deci revoke-urile pe coloane din 20260917100000,
+descrise acolo drept „partea care face abonamentul să nu poată fi falsificat",
+nu scad nimic din grantul de tabel. Toate restricțiile de coloană sunt rescrise
+aici ca allow-list (revoke pe tabel, apoi grant explicit pe coloanele permise),
+formă corectă în ambele interpretări. N-am putut confirma pe o bază reală
+(fără Docker local) — de verificat cu interogarea din capul migrației.
+
+În plus, nimic nu restrângea INSERT-ul pe `vehicles.paid_until`: policy-ul
+`vehicles_insert_admin` cere doar să fii admin al spațiului, deci se putea crea
+un vehicul cu `paid_until = '2099-01-01'` direct pe REST și obține Premium pe
+viață. Gaură independentă de discuția de mai sus, închisă de allow-list-ul de
+INSERT.
+
+Aș reveni dacă: Apare nevoia ca adminul să modifice vehicule, nu doar
+documentele lor — atunci se adaugă explicit `vehicles_update_admin`, nu se
+lărgește policy-ul de select. Sau dacă rolul de admin depășește un singur
+email hardcodat (acum duplicat în trei locuri: ADMIN_EMAIL plus două migrații),
+moment în care merită o coloană de rol pe users și un helper SECURITY DEFINER.

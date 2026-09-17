@@ -11,6 +11,13 @@ import { sendVerificationDigest } from "@/lib/cron/verification-digest";
  * e respinsă, ca nimeni din afară să nu poată declanșa trimiterea.
  */
 export async function GET(request: Request) {
+  // Vezi comentariul din check-expiries: fără guard, un secret nesetat
+  // transforma ruta în endpoint public prin „Bearer undefined".
+  if (!process.env.CRON_SECRET) {
+    console.error("[cron] CRON_SECRET nesetat — refuz să rulez verification-digest.");
+    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 503 });
+  }
+
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

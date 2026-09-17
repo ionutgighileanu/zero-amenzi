@@ -82,6 +82,15 @@ const signupLimiter = makeLimiter(5, "1 h", "signup");
 const attachEmailLimiter = makeLimiter(10, "1 h", "attach-email");
 
 /**
+ * Statusul cererii de verificare: 240/oră. Ruta e publică și interogată prin
+ * polling la fiecare VERIFICATION_POLL_SECONDS (60s) timp de până la 24h, deci
+ * o pagină deschisă legitim consumă ~60 pe oră. Plafonul lasă loc pentru vreo
+ * patru taburi simultane sau mai mulți utilizatori în spatele aceluiași CGNAT,
+ * și tot oprește cine ar vrea să bată endpointul în buclă.
+ */
+const verificationStatusLimiter = makeLimiter(240, "1 h", "verificare-status");
+
+/**
  * Rapoarte CSP: 100/oră. Endpointul e neautentificat prin necesitate —
  * browserul trimite raportul fără cookie-uri — iar o pagină cu o violare
  * repetată poate genera un raport la fiecare încărcare. Plafonul oprește
@@ -148,6 +157,10 @@ export async function limitAttachEmail(ip: string) {
 
 export async function limitCspReport(ip: string) {
   return check(cspReportLimiter, ip);
+}
+
+export async function limitVerificationStatus(ip: string) {
+  return check(verificationStatusLimiter, ip);
 }
 
 /** Mesaj de așteptare în română, din secunde. */
