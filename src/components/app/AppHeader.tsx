@@ -13,25 +13,30 @@ import type { NotificationItem } from "@/lib/notifications";
 export type Space = {
   id: string;
   name: string;
-  kind: string;
+  /** Tipul real din DB, nu o etichetă de afișare: componenta are nevoie de el
+   * ca să aleagă icoana și să distingă garajul de flote. Eticheta vizibilă se
+   * derivă din el (vezi SPACE_KIND_LABEL). */
+  kind: "personal" | "fleet";
   href: string;
 };
 
-const PERSONAL_SPACE: Space = {
-  id: "personal",
-  name: "Garajul meu",
-  kind: "Persoană fizică",
-  href: "/app/garage",
+const SPACE_KIND_LABEL: Record<Space["kind"], string> = {
+  personal: "Persoană fizică",
+  fleet: "Flotă",
 };
 
-function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
+// Garajul personal nu mai e hardcodat aici (D-019): vine din DB, ca orice alt
+// spațiu, prin prop-ul `spaces`.
+
+function ContextSwitcher({ spaces }: { spaces: Space[] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  const spaces = [PERSONAL_SPACE, ...orgSpaces];
-  const active = spaces.find((s) => s.id !== "personal" && pathname.startsWith(s.href)) ?? spaces[0];
-  const ActiveIcon = active.id === "personal" ? Car : Truck;
+  // Flota activă se recunoaște după rută; dacă nicio flotă nu se potrivește,
+  // suntem în garajul personal, care e mereu primul din listă.
+  const active = spaces.find((s) => s.kind === "fleet" && pathname.startsWith(s.href)) ?? spaces[0];
+  const ActiveIcon = active?.kind === "personal" ? Car : Truck;
 
   return (
     <div className="relative">
@@ -69,7 +74,7 @@ function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
               Spațiile tale
             </p>
             {spaces.map((s) => {
-              const Icon = s.id === "personal" ? Car : Truck;
+              const Icon = s.kind === "personal" ? Car : Truck;
               return (
                 <button
                   key={s.id}
@@ -87,7 +92,7 @@ function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
                     <span className="block text-sm font-semibold text-slate-800 truncate">
                       {s.name}
                     </span>
-                    <span className="block text-xs text-slate-500">{s.kind}</span>
+                    <span className="block text-xs text-slate-500">{SPACE_KIND_LABEL[s.kind]}</span>
                   </span>
                   {s.id === active.id && <Check size={16} className="text-blue-700 shrink-0" />}
                 </button>
@@ -114,11 +119,11 @@ function ContextSwitcher({ orgSpaces }: { orgSpaces: Space[] }) {
 
 type AppHeaderProps = {
   email: string;
-  orgSpaces: Space[];
+  spaces: Space[];
   notifications: NotificationItem[];
 };
 
-export function AppHeader({ email, orgSpaces, notifications }: AppHeaderProps) {
+export function AppHeader({ email, spaces, notifications }: AppHeaderProps) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -136,7 +141,7 @@ export function AppHeader({ email, orgSpaces, notifications }: AppHeaderProps) {
               </span>
             </Link>
             <span className="text-slate-300 hidden sm:block">/</span>
-            <ContextSwitcher orgSpaces={orgSpaces} />
+            <ContextSwitcher spaces={spaces} />
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <NotificationBell initialNotifications={notifications} />

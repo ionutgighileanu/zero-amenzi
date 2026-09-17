@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { FIELD_MAX_LENGTH } from "@/lib/constants";
-import { isoDateSchema, requiredText, uuidSchema } from "@/lib/validation/common";
+import { isoDateSchema, requiredText, spaceIdSchema, uuidSchema } from "@/lib/validation/common";
 
 const driverName = requiredText(FIELD_MAX_LENGTH.driverName, "Numele șoferului");
 
@@ -13,19 +13,19 @@ const driverName = requiredText(FIELD_MAX_LENGTH.driverName, "Numele șoferului"
 const driverPhone = requiredText(FIELD_MAX_LENGTH.phone, "Telefonul");
 
 export const addDriverSchema = z.object({
-  orgId: uuidSchema,
+  spaceId: spaceIdSchema,
   name: driverName,
   phone: driverPhone,
 });
 
 export const driverByIdSchema = z.object({
   id: uuidSchema,
-  orgId: uuidSchema,
+  spaceId: spaceIdSchema,
 });
 
 export const updateDriverSchema = z.object({
   id: uuidSchema,
-  orgId: uuidSchema,
+  spaceId: spaceIdSchema,
   patch: z.object({ name: driverName, phone: driverPhone }),
 });
 
@@ -33,10 +33,10 @@ export const addDriverCertSchema = z.object({
   driverId: uuidSchema,
   type: requiredText(FIELD_MAX_LENGTH.docType, "Tipul atestatului"),
   expiresAt: isoDateSchema,
-  orgId: uuidSchema,
+  spaceId: spaceIdSchema,
 });
 
 export const deleteDriverCertSchema = z.object({
   certId: uuidSchema,
-  orgId: uuidSchema,
+  spaceId: spaceIdSchema,
 });

@@ -22,27 +22,32 @@ export type Database = {
         };
         Relationships: [];
       };
-      organizations: {
+      spaces: {
         Row: {
           id: string;
+          kind: "personal" | "fleet";
           name: string;
-          cui: string | null;
           owner_id: string;
+          cui: string | null;
+          subscription_status: "trialing" | "active" | "expired";
+          trial_ends_at: string;
           created_at: string;
         };
+        // subscription_status si trial_ends_at au INSERT revocat pentru
+        // authenticated/anon (vezi migrarea 20260917100000) — valorile vin din
+        // default-urile DB, deci nu se trimit de la client.
         Insert: {
           id?: string;
+          kind: "personal" | "fleet";
           name: string;
-          cui?: string | null;
           owner_id: string;
+          cui?: string | null;
           created_at?: string;
         };
+        // Doar campurile pe care clientul chiar le poate modifica.
         Update: {
-          id?: string;
           name?: string;
           cui?: string | null;
-          owner_id?: string;
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -50,21 +55,21 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          org_id: string;
+          space_id: string;
           role: "owner" | "admin" | "member";
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
-          org_id: string;
+          space_id: string;
           role: "owner" | "admin" | "member";
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
-          org_id?: string;
+          space_id?: string;
           role?: "owner" | "admin" | "member";
           created_at?: string;
         };
@@ -73,39 +78,35 @@ export type Database = {
       vehicles: {
         Row: {
           id: string;
+          space_id: string;
           plate: string;
+          plate_normalized: string;
           vin: string;
           model: string | null;
-          owner_id: string | null;
-          org_id: string | null;
           is_truck: boolean;
-          is_premium: boolean;
+          paid_until: string | null;
           deleted_at: string | null;
           created_at: string;
         };
+        // plate_normalized e completata de trigger; paid_until are UPDATE
+        // revocat pentru client si se scrie doar server-side, din fluxul de
+        // plata (vezi migrarea 20260917100000).
         Insert: {
           id?: string;
+          space_id: string;
           plate: string;
           vin: string;
           model?: string | null;
-          owner_id?: string | null;
-          org_id?: string | null;
           is_truck?: boolean;
-          is_premium?: boolean;
           deleted_at?: string | null;
           created_at?: string;
         };
         Update: {
-          id?: string;
           plate?: string;
           vin?: string;
           model?: string | null;
-          owner_id?: string | null;
-          org_id?: string | null;
           is_truck?: boolean;
-          is_premium?: boolean;
           deleted_at?: string | null;
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -136,7 +137,7 @@ export type Database = {
       drivers: {
         Row: {
           id: string;
-          org_id: string;
+          space_id: string;
           name: string;
           phone: string;
           deleted_at: string | null;
@@ -144,7 +145,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          org_id: string;
+          space_id: string;
           name: string;
           phone: string;
           deleted_at?: string | null;
@@ -152,7 +153,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          org_id?: string;
+          space_id?: string;
           name?: string;
           phone?: string;
           deleted_at?: string | null;
@@ -187,22 +188,19 @@ export type Database = {
       alert_types: {
         Row: {
           id: string;
-          owner_id: string | null;
-          org_id: string | null;
+          space_id: string;
           name: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          owner_id?: string | null;
-          org_id?: string | null;
+          space_id: string;
           name: string;
           created_at?: string;
         };
         Update: {
           id?: string;
-          owner_id?: string | null;
-          org_id?: string | null;
+          space_id?: string;
           name?: string;
           created_at?: string;
         };
@@ -212,7 +210,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string | null;
-          org_id: string | null;
+          space_id: string;
           vehicle_id: string | null;
           driver_id: string | null;
           vehicle_doc_id: string | null;
@@ -231,7 +229,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id?: string | null;
-          org_id?: string | null;
+          space_id: string;
           vehicle_id?: string | null;
           driver_id?: string | null;
           vehicle_doc_id?: string | null;
@@ -250,7 +248,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string | null;
-          org_id?: string | null;
+          space_id?: string;
           vehicle_id?: string | null;
           driver_id?: string | null;
           vehicle_doc_id?: string | null;

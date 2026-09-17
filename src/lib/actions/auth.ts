@@ -93,13 +93,15 @@ export async function signUpAction(
   }
 
   if (accountType === "B2B" && data.user) {
-    const { data: org } = await supabase
-      .from("organizations")
-      .insert({ name: orgName, cui: cui || null, owner_id: data.user.id })
+    // Flotă = space cu kind='fleet'. Spațiul personal a fost deja creat de
+    // triggerul de la signup, deci userul are unde pune mașini în ambele cazuri.
+    const { data: space } = await supabase
+      .from("spaces")
+      .insert({ kind: "fleet", name: orgName, cui: cui || null, owner_id: data.user.id })
       .select("id")
       .single();
 
-    if (org) redirect(`/app/fleet/${org.id}`);
+    if (space) redirect(`/app/fleet/${space.id}`);
   }
 
   redirect("/app/garage");

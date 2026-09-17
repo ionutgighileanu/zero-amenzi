@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mapSpaceRow, spacePath } from "@/lib/spaces";
 import { sendAlertEmail } from "@/lib/email/send-alert";
 import { sendPushAlert } from "@/lib/push/send-alert";
 import { NOTIFICATION_THRESHOLDS, EMAIL_DAILY_LIMIT } from "@/lib/constants";
@@ -24,8 +25,7 @@ type CandidateVehicle = {
   docType: string;
   expiresAt: string;
   daysBefore: number;
-  ownerId: string | null;
-  orgId: string | null;
+  spaceId: string;
   plate: string;
 };
 
@@ -36,7 +36,7 @@ type CandidateDriver = {
   docType: string;
   expiresAt: string;
   daysBefore: number;
-  orgId: string;
+  spaceId: string;
   driverName: string;
 };
 
@@ -88,8 +88,7 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
       docType: doc.type,
       expiresAt: doc.expires_at,
       daysBefore,
-      ownerId: v.owner_id,
-      orgId: v.org_id,
+      spaceId: v.space_id,
       plate: v.plate,
     });
   }
@@ -116,7 +115,7 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
       docType: cert.type,
       expiresAt: cert.expires_at,
       daysBefore,
-      orgId: d.org_id,
+      spaceId: d.space_id,
       driverName: d.name,
     });
   }
@@ -159,8 +158,8 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
   const rows = fresh.map((c) =>
     c.kind === "vehicle"
       ? {
-          user_id: c.ownerId,
-          org_id: c.orgId,
+          user_id: recipientUserId(c),
+          space_id: c.spaceId,
           vehicle_id: c.vehicleId,
           vehicle_doc_id: c.docId,
           doc_type: c.docType,
@@ -169,8 +168,8 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
           channel: "in_app" as const,
         }
       : {
-          user_id: null,
-          org_id: c.orgId,
+          user_id: recipientUserId(c),
+          space_id: c.spaceId,
           driver_id: c.driverId,
           driver_cert_id: c.certId,
           doc_type: c.docType,
@@ -202,17 +201,21 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  // Destinatar: personal → users.email (owner_id); flotă → email-ul owner-ului firmei.
-  const orgIds = [...new Set(fresh.filter((c) => c.orgId).map((c) => c.orgId as string))];
-  const { data: orgRows } = orgIds.length
-    ? await supabase.from("organizations").select("id, owner_id").in("id", orgIds)
+  // Destinatarul e owner-ul spațiului — aceeași regulă pentru garaj personal
+  // și pentru flotă, de când ambele sunt rânduri în `spaces` (D-019). Înainte
+  // era o ramificație: owner_id direct la personal, lookup în organizations
+  // la flotă.
+  const spaceIds = [...new Set(fresh.map((c) => c.spaceId))];
+  const { data: spaceRows } = spaceIds.length
+    ? await supabase.from("spaces").select("*").in("id", spaceIds)
     : { data: [] };
-  const orgOwnerByOrg = new Map((orgRows ?? []).map((o) => [o.id, o.owner_id]));
+  const ownerBySpace = new Map((spaceRows ?? []).map((sp) => [sp.id, sp.owner_id]));
+  const pathBySpace = new Map(
+    (spaceRows ?? []).map((sp) => [sp.id, spacePath(mapSpaceRow(sp))])
+  );
 
   function recipientUserId(c: Candidate): string | null {
-    if (c.kind === "vehicle" && c.ownerId) return c.ownerId;
-    if (c.orgId) return orgOwnerByOrg.get(c.orgId) ?? null;
-    return null;
+    return ownerBySpace.get(c.spaceId) ?? null;
   }
 
   const recipientIds = [...new Set(fresh.map(recipientUserId).filter((id): id is string => !!id))];
@@ -239,7 +242,7 @@ export async function checkExpiries(): Promise<CheckExpiriesResult> {
     const uid = recipientUserId(c);
     const recipient = uid ? userById.get(uid) : undefined;
     const subjectLabel = c.kind === "vehicle" ? c.plate : c.driverName;
-    const path = c.orgId ? `/app/fleet/${c.orgId}` : "/app/garage";
+    const path = pathBySpace.get(c.spaceId) ?? "/app/garage";
 
     // --- Email — respectă preferința users.email_notifications (D-013: ---
     // push e canal suplimentar, nu înlocuiește email-ul; dezactivarea e

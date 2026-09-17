@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_ALERT_TYPES } from "@/lib/constants";
 import { mapVehicleRow } from "@/lib/vehicles";
+import { fetchPersonalSpace } from "@/lib/spaces";
 import { GarageBoard } from "@/components/app/GarageBoard";
 
 export const metadata: Metadata = {
@@ -16,10 +17,16 @@ export default async function GaragePage() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
+  // Spațiul personal e creat de triggerul de la signup. Dacă lipsește, contul
+  // e dinainte de D-019 — trimitem spre creare de flotă în loc să arătăm un
+  // garaj gol care nu acceptă nimic.
+  const space = await fetchPersonalSpace(supabase, auth.user.id);
+  if (!space) redirect("/app/organizations/new");
+
   const { data: vehicleRows } = await supabase
     .from("vehicles")
     .select("*")
-    .eq("owner_id", auth.user.id)
+    .eq("space_id", space.id)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -28,17 +35,23 @@ export default async function GaragePage() {
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
     : { data: [] };
 
+  // Spațiul se pasează la mapare ca fiecare vehicul să-și cunoască starea de
+  // acces (trial / paid / locked) — vezi src/lib/subscription.ts.
   const vehicles = (vehicleRows ?? []).map((row) =>
-    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id))
+    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id), space)
   );
 
   const { data: alertRows } = await supabase
     .from("alert_types")
     .select("name")
-    .eq("owner_id", auth.user.id);
+    .eq("space_id", space.id);
   const alertTypes = alertRows?.length ? alertRows.map((a) => a.name) : DEFAULT_ALERT_TYPES;
 
   return (
-    <GarageBoard ownerId={auth.user.id} initialVehicles={vehicles} initialAlertTypes={alertTypes} />
+    <GarageBoard
+      space={space}
+      initialVehicles={vehicles}
+      initialAlertTypes={alertTypes}
+    />
   );
 }

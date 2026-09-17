@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_ALERT_TYPES } from "@/lib/constants";
 import { mapDriverRow, mapVehicleRow } from "@/lib/vehicles";
+import { fetchSpace } from "@/lib/spaces";
 import { FleetBoard } from "@/components/app/FleetBoard";
 
 export const metadata: Metadata = {
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
     "Panoul flotei: toate vehiculele și șoferii firmei, cu starea documentelor și alerte centralizate înainte de expirarea actelor sau atestatelor.",
 };
 
-export default async function FleetPage({ params }: { params: Promise<{ orgId: string }> }) {
-  const { orgId } = await params;
+export default async function FleetPage({ params }: { params: Promise<{ spaceId: string }> }) {
+  const { spaceId } = await params;
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
@@ -22,21 +23,20 @@ export default async function FleetPage({ params }: { params: Promise<{ orgId: s
   const { data: membership } = await supabase
     .from("memberships")
     .select("role")
-    .eq("org_id", orgId)
+    .eq("space_id", spaceId)
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (!membership) redirect("/app/garage");
 
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("name")
-    .eq("id", orgId)
-    .single();
+  const space = await fetchSpace(supabase, spaceId);
+  // Un spațiu personal accesat pe ruta de flotă înseamnă URL greșit — îl
+  // trimitem pe ruta lui, nu îi arătăm tabelul B2B.
+  if (!space || space.kind !== "fleet") redirect("/app/garage");
 
   const { data: vehicleRows } = await supabase
     .from("vehicles")
     .select("*")
-    .eq("org_id", orgId)
+    .eq("space_id", spaceId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -45,13 +45,13 @@ export default async function FleetPage({ params }: { params: Promise<{ orgId: s
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
     : { data: [] };
   const vehicles = (vehicleRows ?? []).map((row) =>
-    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id))
+    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id), space)
   );
 
   const { data: driverRows } = await supabase
     .from("drivers")
     .select("*")
-    .eq("org_id", orgId)
+    .eq("space_id", spaceId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -66,13 +66,12 @@ export default async function FleetPage({ params }: { params: Promise<{ orgId: s
   const { data: alertRows } = await supabase
     .from("alert_types")
     .select("name")
-    .eq("org_id", orgId);
+    .eq("space_id", spaceId);
   const alertTypes = alertRows?.length ? alertRows.map((a) => a.name) : DEFAULT_ALERT_TYPES;
 
   return (
     <FleetBoard
-      orgId={orgId}
-      orgName={org?.name ?? orgId}
+      space={space}
       initialVehicles={vehicles}
       initialDrivers={drivers}
       initialAlertTypes={alertTypes}

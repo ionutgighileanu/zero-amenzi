@@ -10,7 +10,7 @@ const FAQ_DATA: [string, string][] = [
   ],
   [
     "Cât costă?",
-    "Contul gratuit include 1 vehicul cu verificare unică și notificări pe email. Contul PRO (15 lei/an per vehicul) adaugă monitorizare recurentă, alerte SMS și documente suplimentare (extinctor, CASCO, service etc.). PRO e gratuit dacă îți faci RCA prin noi.",
+    "Primul an e gratuit, cu acces complet: verificare ITP, RCA și rovinietă pentru mașinile tale. După aceea, Premium costă 12 lei/an per vehicul, fără limită de mașini — același preț pentru persoane fizice și pentru firme. Premium rămâne gratuit pentru fiecare RCA cumpărat prin platformă.",
   ],
   [
     "Cum funcționează notificările?",

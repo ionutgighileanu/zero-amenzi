@@ -24,13 +24,15 @@ export async function GET(request: Request) {
         cookieStore.delete(PENDING_ORG_COOKIE);
         try {
           const { name, cui } = JSON.parse(pending) as { name: string; cui: string };
-          const { data: org } = await supabase
-            .from("organizations")
-            .insert({ name, cui: cui || null, owner_id: data.user.id })
+          // Flotă = space cu kind='fleet'. Statusul de abonament și trialul vin
+          // din default-urile DB — au INSERT revocat pentru clienți.
+          const { data: space } = await supabase
+            .from("spaces")
+            .insert({ kind: "fleet", name, cui: cui || null, owner_id: data.user.id })
             .select("id")
             .single();
-          if (org) {
-            return NextResponse.redirect(new URL(`/app/fleet/${org.id}`, url.origin));
+          if (space) {
+            return NextResponse.redirect(new URL(`/app/fleet/${space.id}`, url.origin));
           }
         } catch {
           // JSON invalid sau insert eșuat — continuăm spre garaj, nu blocăm login-ul.

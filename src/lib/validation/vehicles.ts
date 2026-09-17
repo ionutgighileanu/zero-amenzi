@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { FIELD_MAX_LENGTH } from "@/lib/constants";
 import { normalizePlate } from "@/lib/plate";
-import { isoDateSchema, requiredText, uuidSchema, vehicleScopeSchema } from "@/lib/validation/common";
+import { isoDateSchema, requiredText, spaceIdSchema, uuidSchema } from "@/lib/validation/common";
 
 /**
  * Plăcuța la adăugarea unui vehicul.
@@ -18,24 +18,24 @@ export const vehiclePlateSchema = z
   .refine((value) => value.length > 0, { message: "Numărul de înmatriculare este obligatoriu." });
 
 export const addVehicleSchema = z.object({
-  scope: vehicleScopeSchema,
+  spaceId: spaceIdSchema,
   plate: vehiclePlateSchema,
   vin: requiredText(FIELD_MAX_LENGTH.vin, "VIN-ul").transform((value) => value.toUpperCase()),
 });
 
 export const vehicleByIdSchema = z.object({
   id: uuidSchema,
-  scope: vehicleScopeSchema,
+  spaceId: spaceIdSchema,
 });
 
 export const addVehicleDocSchema = z.object({
   vehicleId: uuidSchema,
   type: requiredText(FIELD_MAX_LENGTH.docType, "Tipul documentului"),
   expiresAt: isoDateSchema,
-  scope: vehicleScopeSchema,
+  spaceId: spaceIdSchema,
 });
 
 export const deleteVehicleDocSchema = z.object({
   docId: uuidSchema,
-  scope: vehicleScopeSchema,
+  spaceId: spaceIdSchema,
 });

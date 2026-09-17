@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Info } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { VehicleCard } from "@/components/app/VehicleCard";
@@ -21,15 +21,17 @@ import {
   undoDeleteVehicleAction,
 } from "@/lib/actions/vehicles";
 import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
+import { startUpgradeAction } from "@/lib/actions/payments";
+import type { Space } from "@/lib/spaces";
+import { vehicleAccess } from "@/lib/subscription";
 
 type GarageBoardProps = {
-  ownerId: string;
+  space: Space;
   initialVehicles: Vehicle[];
   initialAlertTypes: string[];
 };
 
-export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: GarageBoardProps) {
-  const scope = { ownerId } as const;
+export function GarageBoard({ space, initialVehicles, initialAlertTypes }: GarageBoardProps) {
 
   const {
     visible: vehicles,
@@ -38,8 +40,8 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
     softDelete,
     undo,
   } = useSoftDelete<Vehicle>(initialVehicles, {
-    onDelete: (id) => softDeleteVehicleAction(id, scope),
-    onUndo: (id) => undoDeleteVehicleAction(id, scope),
+    onDelete: (id) => softDeleteVehicleAction(id, space.id),
+    onUndo: (id) => undoDeleteVehicleAction(id, space.id),
   });
 
   const [alertTypes, setAlertTypes] = useState<string[]>(initialAlertTypes);
@@ -47,6 +49,20 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
+  // Mesajul întors de fluxul de plată. Cât timp niciun procesator nu e
+  // conectat, providerul răspunde „not_configured" și arătăm exact asta —
+  // nu simulăm o plată reușită.
+  const [upgradeNotice, setUpgradeNotice] = useState<string | null>(null);
+
+  const requestUpgrade = async (vehicle: Vehicle) => {
+    setUpgradeNotice(null);
+    const result = await startUpgradeAction(space.id, [vehicle.id]);
+    if (result.status === "redirect") {
+      window.location.href = result.url;
+      return;
+    }
+    setUpgradeNotice(result.message);
+  };
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
@@ -54,7 +70,7 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, docs } = await addVehicleAction(scope, plate, vin);
+      const { vehicle, docs } = await addVehicleAction(space.id, plate, vin);
       const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
       setVehicles((list) => [
         {
@@ -62,7 +78,8 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
           plate: vehicle.plate,
           vin: vehicle.vin,
           model: vehicle.model,
-          isPremium: vehicle.is_premium,
+          paidUntil: vehicle.paid_until,
+          access: vehicleAccess(space, vehicle.paid_until),
           truck: vehicle.is_truck,
           itp: findDoc("ITP"),
           rca: findDoc("RCA"),
@@ -80,7 +97,7 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
 
   const addDoc = async (id: string, doc: { type: string; expires: string }) => {
     try {
-      const row = await addVehicleDocAction(id, doc.type, doc.expires, scope);
+      const row = await addVehicleDocAction(id, doc.type, doc.expires, space.id);
       setVehicles((list) =>
         list.map((v) =>
           v.id === id
@@ -98,7 +115,7 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
 
   const deleteDoc = async (id: string, docId: string) => {
     try {
-      await deleteVehicleDocAction(docId, scope);
+      await deleteVehicleDocAction(docId, space.id);
       setVehicles((list) =>
         list.map((v) =>
           v.id === id ? { ...v, docs: (v.docs ?? []).filter((d) => d.id !== docId) } : v
@@ -111,7 +128,7 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
 
   const saveAlertTypes = (types: string[]) => {
     setAlertTypes(types);
-    void saveAlertTypesAction(scope, types);
+    void saveAlertTypesAction(space.id, types);
   };
 
   return (
@@ -137,6 +154,22 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
         </div>
       </div>
 
+      {upgradeNotice && (
+        <div
+          className="mb-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900"
+          role="status"
+        >
+          <Info size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span className="flex-1">{upgradeNotice}</span>
+          <button
+            onClick={() => setUpgradeNotice(null)}
+            className="shrink-0 font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 rounded"
+          >
+            Închide
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         <AnimatePresence initial={false}>
           {vehicles.map((v) => (
@@ -146,6 +179,7 @@ export function GarageBoard({ ownerId, initialVehicles, initialAlertTypes }: Gar
               onOpen={(veh) => setDetailId(veh.id)}
               onRca={setRcaVehicle}
               onCasco={setCascoVehicle}
+              onUpgrade={requestUpgrade}
             />
           ))}
         </AnimatePresence>

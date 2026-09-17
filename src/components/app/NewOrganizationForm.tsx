@@ -3,12 +3,12 @@
 import { useActionState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { createOrganizationAction, type CreateOrgState } from "@/lib/actions/organizations";
+import { createFleetSpaceAction, type CreateSpaceState } from "@/lib/actions/spaces";
 
-const initialState: CreateOrgState = null;
+const initialState: CreateSpaceState = null;
 
 export function NewOrganizationForm() {
-  const [state, formAction, pending] = useActionState(createOrganizationAction, initialState);
+  const [state, formAction, pending] = useActionState(createFleetSpaceAction, initialState);
 
   return (
     <form action={formAction} className="space-y-4 bg-white rounded-2xl border border-slate-200 p-6">

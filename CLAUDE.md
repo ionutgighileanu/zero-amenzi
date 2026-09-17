@@ -54,10 +54,13 @@ notifications_log   → istoric alerte trimise
 ## Decizii arhitecturale importante
 - **Identity + Spaces:** un cont poate deține garaj personal ȘI una sau mai multe flote
 - **Fără documente de identitate:** nu stocăm buletin, permis sau copii acte — doar date de expirare
-- **Freemium:**
-  - Free: 1 vehicul, verificare unică, alerte email
-  - PRO: 15 lei/an/vehicul, vehicule nelimitate, SMS, actualizare recurentă, ARR, alerte extra
-  - PRO gratuit la fiecare RCA cumpărat prin platformă
+- **Abonamente (D-019):** vezi `src/lib/subscription.ts` pentru regulile efective.
+  - Trial: 1 an gratuit per spațiu, vehicule nelimitate
+  - Premium: 12 lei/an per vehicul, fără plafon — același preț la B2C și B2B
+  - Premium gratuit pentru fiecare RCA cumpărat prin platformă
+  - Expirarea e pe două niveluri: trialul per spațiu, plata per vehicul.
+    Un vehicul plătit rămâne accesibil chiar dacă trialul spațiului a expirat.
+  - Anti-abuz: trialul se leagă de plăcuță (`plate_trials`), nu de cont
 - **B2C:** carduri cu semafor, minimal, airy
 - **B2B:** tabel compact sortabil/filtrabil, KPI strip, tab șoferi
 - **Soft-delete:** ștergerea unui vehicul/șofer setează `deleted_at`, nu șterge rândul. UI arată un banner de 30s cu opțiune Undo (`deleted_at = null`); după expirare, ștergerea devine efectivă din perspectiva UI (rândurile cu `deleted_at` setat sunt excluse din listări).

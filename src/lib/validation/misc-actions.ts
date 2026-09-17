@@ -9,11 +9,12 @@ import {
   optionalText,
   requiredText,
   uuidSchema,
-  vehicleScopeSchema,
+  spaceIdSchema,
 } from "@/lib/validation/common";
 
-/** Organizații — createOrganizationAction. */
-export const createOrganizationSchema = z.object({
+/** Flote — createFleetSpaceAction. Numele „organization" a dispărut odată
+ * cu tabelul; entitatea e acum un `space` cu kind='fleet'. */
+export const createFleetSpaceSchema = z.object({
   name: requiredText(FIELD_MAX_LENGTH.orgName, "Numele firmei"),
   cui: optionalText(FIELD_MAX_LENGTH.cui, "CUI-ul"),
 });
@@ -26,7 +27,7 @@ export const createOrganizationSchema = z.object({
  * același tip de mai multe ori.
  */
 export const saveAlertTypesSchema = z.object({
-  scope: vehicleScopeSchema,
+  spaceId: spaceIdSchema,
   names: z
     .array(requiredText(FIELD_MAX_LENGTH.alertTypeName, "Numele alertei"))
     .max(MAX_ALERTS, { message: `Poți salva cel mult ${MAX_ALERTS} tipuri de alerte.` })

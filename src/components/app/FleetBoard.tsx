@@ -13,6 +13,7 @@ import {
   Settings,
   Truck,
   Users,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
@@ -46,6 +47,8 @@ import {
   updateDriverAction,
 } from "@/lib/actions/drivers";
 import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
+import type { Space } from "@/lib/spaces";
+import { vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 
 type SortCol = "urgency" | "rca" | "itp" | "rovinieta" | "tahograf";
 type Sort = { col: SortCol; dir: "asc" | "desc" };
@@ -86,21 +89,18 @@ function SortHeader({
 }
 
 type FleetBoardProps = {
-  orgId: string;
-  orgName: string;
+  space: Space;
   initialVehicles: Vehicle[];
   initialDrivers: Driver[];
   initialAlertTypes: string[];
 };
 
 export function FleetBoard({
-  orgId,
-  orgName,
+  space,
   initialVehicles,
   initialDrivers,
   initialAlertTypes,
 }: FleetBoardProps) {
-  const scope = { orgId } as const;
 
   const {
     visible: vehicles,
@@ -109,8 +109,8 @@ export function FleetBoard({
     softDelete: softDeleteVehicle,
     undo: undoVehicle,
   } = useSoftDelete<Vehicle>(initialVehicles, {
-    onDelete: (id) => softDeleteVehicleAction(id, scope),
-    onUndo: (id) => undoDeleteVehicleAction(id, scope),
+    onDelete: (id) => softDeleteVehicleAction(id, space.id),
+    onUndo: (id) => undoDeleteVehicleAction(id, space.id),
   });
 
   const {
@@ -120,8 +120,8 @@ export function FleetBoard({
     softDelete: softDeleteDriver,
     undo: undoDriver,
   } = useSoftDelete<Driver>(initialDrivers, {
-    onDelete: (id) => softDeleteDriverAction(id, orgId),
-    onUndo: (id) => undoDeleteDriverAction(id, orgId),
+    onDelete: (id) => softDeleteDriverAction(id, space.id),
+    onUndo: (id) => undoDeleteDriverAction(id, space.id),
   });
 
   const [tab, setTab] = useState<Tab>("vehicles");
@@ -176,7 +176,7 @@ export function FleetBoard({
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, docs } = await addVehicleAction(scope, plate, vin);
+      const { vehicle, docs } = await addVehicleAction(space.id, plate, vin);
       const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
       setVehicles((list) => [
         {
@@ -184,7 +184,8 @@ export function FleetBoard({
           plate: vehicle.plate,
           vin: vehicle.vin,
           model: vehicle.model,
-          isPremium: vehicle.is_premium,
+          paidUntil: vehicle.paid_until,
+          access: vehicleAccess(space, vehicle.paid_until),
           truck: vehicle.is_truck,
           itp: findDoc("ITP"),
           rca: findDoc("RCA"),
@@ -202,7 +203,7 @@ export function FleetBoard({
 
   const addVehicleDoc = async (id: string, doc: { type: string; expires: string }) => {
     try {
-      const row = await addVehicleDocAction(id, doc.type, doc.expires, scope);
+      const row = await addVehicleDocAction(id, doc.type, doc.expires, space.id);
       setVehicles((list) =>
         list.map((v) =>
           v.id === id
@@ -220,7 +221,7 @@ export function FleetBoard({
 
   const deleteVehicleDoc = async (id: string, docId: string) => {
     try {
-      await deleteVehicleDocAction(docId, scope);
+      await deleteVehicleDocAction(docId, space.id);
       setVehicles((list) =>
         list.map((v) =>
           v.id === id ? { ...v, docs: (v.docs ?? []).filter((d) => d.id !== docId) } : v
@@ -233,7 +234,7 @@ export function FleetBoard({
 
   const addDriver = async (name: string, phone: string) => {
     try {
-      const row = await addDriverAction(orgId, name, phone);
+      const row = await addDriverAction(space.id, name, phone);
       setDrivers((list) => [
         ...list,
         { id: row.id, name: row.name, phone: row.phone, certs: [], deleted_at: null },
@@ -245,7 +246,7 @@ export function FleetBoard({
 
   const updateDriver = async (id: string, patch: { name: string; phone: string }) => {
     try {
-      await updateDriverAction(id, patch, orgId);
+      await updateDriverAction(id, patch, space.id);
       setDrivers((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
     } catch (err) {
       console.error(err);
@@ -254,7 +255,7 @@ export function FleetBoard({
 
   const addDriverCert = async (id: string, cert: { type: string; expires: string }) => {
     try {
-      const row = await addDriverCertAction(id, cert.type, cert.expires, orgId);
+      const row = await addDriverCertAction(id, cert.type, cert.expires, space.id);
       setDrivers((list) =>
         list.map((d) =>
           d.id === id
@@ -269,7 +270,7 @@ export function FleetBoard({
 
   const deleteDriverCert = async (id: string, certId: string) => {
     try {
-      await deleteDriverCertAction(certId, orgId);
+      await deleteDriverCertAction(certId, space.id);
       setDrivers((list) =>
         list.map((d) => (d.id === id ? { ...d, certs: d.certs.filter((c) => c.id !== certId) } : d))
       );
@@ -280,7 +281,7 @@ export function FleetBoard({
 
   const saveAlertTypes = (types: string[]) => {
     setAlertTypes(types);
-    void saveAlertTypesAction(scope, types);
+    void saveAlertTypesAction(space.id, types);
   };
 
   const onDrivers = tab === "drivers";
@@ -296,7 +297,7 @@ export function FleetBoard({
       <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight font-display">
-            {orgName}
+            {space.name}
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {problemCount === 0
@@ -450,6 +451,17 @@ export function FleetBoard({
                               <Plate plate={v.plate} size="sm" />
                               {v.truck && (
                                 <Truck size={14} className="text-slate-300" aria-label="Camion" />
+                              )}
+                              {/* Vehicul cu abonament expirat: în tabelul B2B
+                                  spațiul e strâmt, deci marcăm cu o pastilă
+                                  lângă plăcuță în loc de o bandă separată. */}
+                              {v.access === "locked" && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200"
+                                  title={`Abonamentul pentru ${v.plate} a expirat — reînnoiește (${VEHICLE_PRICE_RON_PER_YEAR} lei/an).`}
+                                >
+                                  <Lock size={11} aria-hidden="true" /> Expirat
+                                </span>
                               )}
                             </div>
                           </td>

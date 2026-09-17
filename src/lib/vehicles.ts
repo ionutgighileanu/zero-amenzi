@@ -1,4 +1,5 @@
 import { daysUntil } from "@/lib/status";
+import { vehicleAccess, type SubscribableSpace, type VehicleAccess } from "@/lib/subscription";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type VehicleDoc = { id: string; type: string; expires: string };
@@ -8,7 +9,12 @@ export type Vehicle = {
   plate: string;
   vin: string;
   model?: string | null;
-  isPremium?: boolean;
+  /** Data până la care vehiculul e plătit individual. null = neplătit
+   * (acoperit de trial, sau blocat). Înlocuiește vechiul isPremium. */
+  paidUntil?: string | null;
+  /** Starea de acces, calculată din abonamentul spațiului + paidUntil.
+   * „locked" înseamnă că datele RCA/ITP/Rovinietă nu se afișează. */
+  access?: VehicleAccess;
   truck?: boolean;
   itp: string | null;
   rca: string | null;
@@ -42,7 +48,11 @@ type VehicleDocRow = Database["public"]["Tables"]["vehicle_docs"]["Row"];
 type DriverRow = Database["public"]["Tables"]["drivers"]["Row"];
 type DriverCertRow = Database["public"]["Tables"]["driver_certs"]["Row"];
 
-export function mapVehicleRow(row: VehicleRow, docs: VehicleDocRow[]): Vehicle {
+export function mapVehicleRow(
+  row: VehicleRow,
+  docs: VehicleDocRow[],
+  space?: SubscribableSpace
+): Vehicle {
   const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
   const coreTypes = Object.values(CORE_DOC_TYPES);
   const extra = docs
@@ -54,7 +64,11 @@ export function mapVehicleRow(row: VehicleRow, docs: VehicleDocRow[]): Vehicle {
     plate: row.plate,
     vin: row.vin,
     model: row.model,
-    isPremium: row.is_premium,
+    paidUntil: row.paid_until,
+    // Fără spațiu (apeluri vechi, sau contexte unde abonamentul nu contează)
+    // lăsăm access nedefinit, nu „locked" — altfel am ascunde date din
+    // greșeală acolo unde apelantul n-a apucat să treacă spațiul.
+    access: space ? vehicleAccess(space, row.paid_until) : undefined,
     truck: row.is_truck,
     itp: findDoc(CORE_DOC_TYPES.itp),
     rca: findDoc(CORE_DOC_TYPES.rca),

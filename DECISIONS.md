@@ -239,3 +239,75 @@ Două detalii de implementare care nu sunt evidente:
 Aș reveni dacă: Trecem pe Vercel Pro (atunci cronul se mută înapoi în
 vercel.json, mai aproape de restul configurației), sau dacă întârzierile
 GitHub devin o problemă reală pentru timpul de răspuns către solicitanți.
+
+## D-019 · 2026-09 · Spații unificate și abonamente per vehicul
+
+Context: Aplicația avea două concepte de „cine deține vehicule", modelate
+diferit. Flotele erau rânduri reale în `organizations`. Garajul personal nu
+exista în baza de date — era un obiect hardcodat în `AppHeader.tsx`, iar
+apartenența se deducea din `vehicles.owner_id`. Fiecare acțiune care atingea
+vehicule primea un „scop" polimorf, `{ownerId} XOR {orgId}`, și ramifica pe el.
+
+Peste asta trebuia construit un sistem de abonamente care funcționează la
+nivelul entității care deține vehiculele — și una dintre cele două entități
+nu exista.
+
+Decizii luate:
+
+- **`spaces` înlocuiește `organizations`.** Garajul personal devine un rând
+  real, cu `kind='personal'`, creat automat de triggerul de la signup. Flotele
+  sunt același tabel, cu `kind='fleet'` și CUI. Toate celelalte tabele
+  (`vehicles`, `drivers`, `alert_types`, `memberships`, `notifications_log`)
+  se leagă de `space_id`, nu de `owner_id`/`org_id`.
+- **Prețul e 12 lei/an per vehicul, fără plafon**, identic pentru persoane
+  fizice și firme. S-a renunțat la plafonul de 4 vehicule discutat inițial la
+  B2C: la preț egal n-are sens. Firmele mari pot negocia separat.
+- **Expirarea are două niveluri independente.** `spaces.subscription_status`
+  ține trialul de 1 an; `vehicles.paid_until` ține plata concretă. Regula de
+  acces (`src/lib/subscription.ts`) e:
+  `(spațiul e trialing și trialul n-a expirat) SAU (paid_until > acum)`.
+  Nu e all-or-nothing: dacă trialul expiră și ai plătit 2 din 3 mașini, cele
+  două plătite rămân accesibile și doar a treia se blochează — datele
+  RCA/ITP/Rovinietă i se ascund.
+- **Trialul se leagă de plăcuță, nu de cont.** Tabelul `plate_trials` are
+  cheia primară pe plăcuța normalizată, iar un trigger o înregistrează la
+  primul vehicul adăugat dintr-un spațiu în trial. Un cont nou cu alt email
+  nu mai poate lua încă un an gratuit pentru aceeași mașină.
+- **Interfața de plată e agnostică.** `PaymentProvider` (src/lib/payments/)
+  definește `createCheckout` și `handleWebhook`; implicit rulează un provider
+  care răspunde „not configured". Niciun SDK instalat, nicio cheie, nicio
+  presupunere despre Stripe/PayU/Netopia.
+
+De ce contează detaliile astea:
+
+- **Privilegii pe coloane, nu doar RLS.** RLS decide pe ce RÂNDURI scrie
+  clientul, nu ce COLOANE. Fără `revoke update (paid_until) on vehicles`,
+  orice utilizator autentificat își dădea Premium gratis cu un
+  `PATCH /rest/v1/vehicles {"paid_until":"2099-01-01"}` — policy-ul ar fi
+  permis, e propriul lui vehicul. La fel pentru `subscription_status` și
+  `trial_ends_at` pe spații. Tipurile `Update` din database.types.ts omit
+  aceleași coloane, deci și TypeScript respinge scrierea lor; singura excepție
+  e `src/lib/payments/grant.ts`, care rulează cu service_role.
+- **Regulile sunt impuse de trigger, nu de aplicație.** Cheia anon e publică,
+  deci un POST direct la REST ocolește tot codul. Triggerul
+  `enforce_vehicle_subscription_rules` respinge inserturile în spații expirate
+  și plăcuțele care și-au consumat trialul, indiferent pe unde vin.
+- **Mock-ul de plată nu simulează succes.** Un mock care „reușește" ar acorda
+  Premium oricui apasă butonul, iar ajuns din greșeală în producție n-ar fi
+  observat până la verificarea încasărilor.
+
+Consecințe acceptate:
+
+- Mașina vândută nu mai primește trial. Noul proprietar vede „acest vehicul a
+  beneficiat deja de perioada gratuită" și trebuie să plătească. E prețul
+  legării trialului de plăcuță — respinge și un caz legitim.
+- `normalize_plate` există în două locuri, SQL și TypeScript, ținute sincron
+  manual. Postgres nu poate importa funcția din TS, iar cerința de constrângere
+  la nivel de DB nu se putea satisface altfel.
+- Migrarea 20260917100000 e distructivă: șterge `organizations` și recreează 8
+  tabele. Sigură doar pentru că baza era goală la momentul aplicării.
+
+Aș reveni dacă: Apare nevoia de roluri mai fine în flotă (azi owner/admin/member
+e moștenit din `memberships` fără să fie folosit diferențiat), sau dacă
+abonamentul trebuie să devină per-spațiu cu preț de volum în loc de per-vehicul
+— ambele ar cere revenit la modelul de facturare, nu la structura spațiilor.

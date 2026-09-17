@@ -1,7 +1,7 @@
 "use client";
 
 import { MouseEvent } from "react";
-import { ChevronRight, Mail, MessageSquare, Zap } from "lucide-react";
+import { ChevronRight, Lock, Mail, MessageSquare, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import { Button } from "@/components/ui/Button";
@@ -9,15 +9,17 @@ import { Plate } from "@/components/ui/Plate";
 import { StatusCell } from "@/components/app/StatusCell";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
+import { VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 
 type VehicleCardProps = {
   vehicle: Vehicle;
   onOpen: (v: Vehicle) => void;
   onRca: (v: Vehicle) => void;
   onCasco: (v: Vehicle) => void;
+  onUpgrade: (v: Vehicle) => void;
 };
 
-export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardProps) {
+export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco, onUpgrade }: VehicleCardProps) {
   const vStatus = vehicleStatus(v);
   const rcaStatus = getStatus(v.rca);
 
@@ -57,26 +59,43 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
       </div>
 
       <div className="px-5 flex-1">
-        {(
-          [
-            ["RCA", v.rca],
-            ["ITP", v.itp],
-            ["Rovinietă", v.rovinieta],
-          ] as const
-        ).map(([label, date]) => (
-          <div
-            key={label}
-            className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0"
-          >
-            <span className="text-sm text-slate-500">{label}</span>
-            <StatusCell date={date} />
+        {v.access === "locked" ? (
+          /* Abonament expirat pe ACEST vehicul: datele nu se mai arată. Nu e
+             doar un badge — conținutul pentru care se plătește dispare, iar
+             în loc rămâne calea de reînnoire. */
+          <div className="py-6 text-center">
+            <Lock size={20} className="mx-auto text-slate-300 mb-2" aria-hidden="true" />
+            <p className="text-sm text-slate-600">
+              Datele RCA, ITP și rovinietă sunt ascunse pentru acest vehicul.
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Reînnoiește abonamentul ca să le vezi din nou.
+            </p>
           </div>
-        ))}
-        {(v.docs ?? []).length > 0 && (
-          <div className="flex justify-between items-center py-2.5">
-            <span className="text-sm text-slate-500">Alte documente</span>
-            <span className="text-xs text-slate-500">{v.docs!.length} adăugate</span>
-          </div>
+        ) : (
+          <>
+            {(
+              [
+                ["RCA", v.rca],
+                ["ITP", v.itp],
+                ["Rovinietă", v.rovinieta],
+              ] as const
+            ).map(([label, date]) => (
+              <div
+                key={label}
+                className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0"
+              >
+                <span className="text-sm text-slate-500">{label}</span>
+                <StatusCell date={date} />
+              </div>
+            ))}
+            {(v.docs ?? []).length > 0 && (
+              <div className="flex justify-between items-center py-2.5">
+                <span className="text-sm text-slate-500">Alte documente</span>
+                <span className="text-xs text-slate-500">{v.docs!.length} adăugate</span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -100,22 +119,34 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco }: VehicleCardP
         </Button>
       </div>
 
-      {/* Free vs Premium — diferența e explicită, nu doar un badge */}
-      {v.isPremium ? (
+      {/* Starea de abonament, pe trei niveluri. Ascunderea efectivă a datelor
+          se face mai sus, în secțiunea de documente. */}
+      {v.access === "paid" ? (
         <div className="px-5 py-3 border-t border-blue-100 bg-blue-50/60 flex items-center gap-2 text-xs font-medium text-brand">
-          <Zap size={13} /> Premium · sincronizare lunară automată
+          <Zap size={13} aria-hidden="true" /> Premium · sincronizare lunară automată
           <span className="ml-auto flex items-center gap-1 text-blue-700/70">
-            <MessageSquare size={12} /> SMS
+            <MessageSquare size={12} aria-hidden="true" /> SMS
           </span>
+        </div>
+      ) : v.access === "locked" ? (
+        <div className="px-5 py-3 border-t border-red-100 bg-red-50 flex flex-wrap items-center gap-2 text-xs text-red-700">
+          <Lock size={13} aria-hidden="true" />
+          <span>Abonamentul a expirat</span>
+          <button
+            onClick={(e) => stop(e, () => onUpgrade(v))}
+            className="ml-auto font-semibold text-red-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-red-700 rounded"
+          >
+            Reînnoiește · {VEHICLE_PRICE_RON_PER_YEAR} lei/an
+          </button>
         </div>
       ) : (
         <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center gap-2 text-xs text-slate-500">
-          <Mail size={13} /> Free · verificare unică, alerte email
+          <Mail size={13} aria-hidden="true" /> Gratuit în perioada de probă
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => stop(e, () => onUpgrade(v))}
             className="ml-auto font-semibold text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
           >
-            Premium · 15 lei/an
+            Premium · {VEHICLE_PRICE_RON_PER_YEAR} lei/an
           </button>
         </div>
       )}

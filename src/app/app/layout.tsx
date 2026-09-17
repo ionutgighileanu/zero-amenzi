@@ -6,6 +6,7 @@ import { PushOnboarding } from "@/components/app/PushOnboarding";
 import { VerificationNotifications } from "@/components/app/VerificationNotifications";
 import { createClient } from "@/lib/supabase/server";
 import type { NotificationItem } from "@/lib/notifications";
+import { fetchUserSpaces, spacePath, type Space as DbSpace } from "@/lib/spaces";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -14,26 +15,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Middleware protejează /app/*, dar rămâne o barieră de siguranță aici.
   if (!auth.user) redirect("/login");
 
-  // Interogări separate (nu embedded select) — tipurile Database sunt scrise
-  // manual, fără metadata de Relationships necesară inferenței pe join-uri.
-  const { data: memberships } = await supabase
-    .from("memberships")
-    .select("org_id")
-    .eq("user_id", auth.user.id);
+  // Spațiile reale ale userului, din DB — garajul personal nu mai e un obiect
+  // hardcodat în frontend (D-019), e un rând ca oricare altul.
+  const userSpaces = await fetchUserSpaces(supabase, auth.user.id);
 
-  const orgIds = (memberships ?? []).map((m) => m.org_id);
-  const { data: orgs } = orgIds.length
-    ? await supabase.from("organizations").select("id, name").in("id", orgIds)
-    : { data: [] };
-
-  const orgSpaces: Space[] = (orgs ?? []).map((org) => ({
-    id: org.id,
-    name: org.name,
-    kind: "Flotă",
-    href: `/app/fleet/${org.id}`,
+  const spaces: Space[] = userSpaces.map((space) => ({
+    id: space.id,
+    name: space.name,
+    kind: space.kind,
+    href: spacePath(space),
   }));
 
-  const notifications = await fetchUnreadNotifications(supabase, auth.user.id, orgIds);
+  const notifications = await fetchUnreadNotifications(supabase, auth.user.id, userSpaces);
 
   // Notificări in-app din tabela `notifications` (azi: verificări finalizate).
   // Separate de notifications_log/clopoțel — altă formă, alt tabel.
@@ -48,7 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <MotionProvider>
       <div className="min-h-screen bg-slate-50 text-slate-900 flex-1">
-        <AppHeader email={auth.user.email ?? ""} orgSpaces={orgSpaces} notifications={notifications} />
+        <AppHeader email={auth.user.email ?? ""} spaces={spaces} notifications={notifications} />
         <VerificationNotifications initial={inAppNotifications ?? []} />
         {children}
         <InstallBanner />
@@ -58,15 +51,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   );
 }
 
-/** Notificări necitite (read_at IS NULL) pentru user + toate flotele lui —
- * interogări separate, nu embedded select (vezi nota de mai sus). */
+/** Notificări necitite (read_at IS NULL) din toate spațiile userului.
+ * Interogări separate, nu embedded select: tipurile Database sunt scrise
+ * manual, fără metadata de Relationships necesară inferenței pe join-uri. */
 async function fetchUnreadNotifications(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
-  orgIds: string[]
+  userSpaces: DbSpace[]
 ): Promise<NotificationItem[]> {
-  const orFilter = orgIds.length
-    ? `user_id.eq.${userId},org_id.in.(${orgIds.join(",")})`
+  const spaceIds = userSpaces.map((space) => space.id);
+  const orFilter = spaceIds.length
+    ? `user_id.eq.${userId},space_id.in.(${spaceIds.join(",")})`
     : `user_id.eq.${userId}`;
 
   const { data: rows } = await supabase
@@ -90,6 +85,9 @@ async function fetchUnreadNotifications(
     ? await supabase.from("drivers").select("id, name").in("id", driverIds)
     : { data: [] };
 
+  // Ruta fiecărui spațiu, din datele deja încărcate — evită un query în plus
+  // doar ca să aflăm dacă notificarea e dintr-un garaj sau dintr-o flotă.
+  const spaceById = new Map(userSpaces.map((space) => [space.id, spacePath(space)]));
   const plateByVehicle = new Map((vehicleRows ?? []).map((v) => [v.id, v.plate]));
   const nameByDriver = new Map((driverRows ?? []).map((d) => [d.id, d.name]));
 
@@ -101,6 +99,6 @@ async function fetchUnreadNotifications(
       : nameByDriver.get(r.driver_id ?? "") ?? "Șofer șters",
     daysBefore: r.days_before ?? 0,
     expiresAt: r.expires_at ?? r.sent_at,
-    href: r.org_id ? `/app/fleet/${r.org_id}` : "/app/garage",
+    href: spaceById.get(r.space_id) ?? "/app/garage",
   }));
 }

@@ -50,20 +50,10 @@ export function optionalText(maxLength: number, label: string) {
 }
 
 /**
- * Un vehicul sau o listă de alerte aparține fie unui garaj personal, fie unei
- * flote — niciodată ambelor. Oglindește constrângerea `owner_xor_org` din
- * schemă, ca un scop malformat să pice aici, nu la insert.
+ * Identificatorul spațiului care deține resursa.
  *
- * Scris cu `.optional()` + refine, nu ca uniune cu `z.undefined()`: în Zod 4
- * `z.undefined()` cere cheia să EXISTE în obiect, iar apelanții construiesc
- * `{ ownerId }` fără cheia `orgId` deloc. Varianta cu uniune trecea de
- * TypeScript dar arunca la runtime pe fiecare apel real.
+ * Înlocuiește vechiul vehicleScopeSchema (owner_id XOR org_id): de la D-019,
+ * garajul personal e un rând real în `spaces`, la fel ca flotele, deci nu mai
+ * există două forme de „scop" — e mereu un singur space_id.
  */
-export const vehicleScopeSchema = z
-  .object({
-    ownerId: uuidSchema.optional(),
-    orgId: uuidSchema.optional(),
-  })
-  .refine((scope) => (scope.ownerId === undefined) !== (scope.orgId === undefined), {
-    message: "Scop invalid: alege fie un garaj personal, fie o flotă, nu ambele.",
-  });
+export const spaceIdSchema = uuidSchema;

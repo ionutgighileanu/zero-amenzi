@@ -689,7 +689,7 @@ const B2CDashboard = ({ vehicles, onRca, onCasco, onAdd, onOpen }) => (
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center gap-2 text-xs text-slate-500">
               <Mail size={13} /> Free · verificare unică, alerte email
               <button onClick={(e) => e.stopPropagation()} className="ml-auto font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" style={{ color: '#003399' }}>
-                Premium · 15 lei/an
+                Premium · 12 lei/an
               </button>
             </div>
           )}

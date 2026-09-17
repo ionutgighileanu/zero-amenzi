@@ -62,7 +62,7 @@ const SectionTitle = ({ children, className = '' }) => (
 /* ---------- FAQ ---------- */
 const faqData = [
   ['Ce este AutoDocs?', 'AutoDocs verifică automat dacă ITP-ul, RCA-ul și rovinieta mașinii tale sunt valabile și te notifică înainte de expirare, ca să nu mai iei amenzi. Funcționează și pentru persoane fizice, și pentru flote de companie.'],
-  ['Cât costă?', 'Contul gratuit include 1 vehicul cu verificare unică și notificări pe email. Contul PRO (15 lei/an per vehicul) adaugă monitorizare recurentă, alerte SMS și documente suplimentare (extinctor, CASCO, service etc.). PRO e gratuit dacă îți faci RCA prin noi.'],
+  ['Cât costă?', 'Primul an e gratuit, cu acces complet: verificare ITP, RCA și rovinietă pentru mașinile tale. După aceea, Premium costă 12 lei/an per vehicul, fără limită de mașini — același preț pentru persoane fizice și pentru firme. Premium rămâne gratuit pentru fiecare RCA cumpărat prin platformă.'],
   ['Cum funcționează notificările?', 'Primești alerte cu 30 de zile, 15 zile, 2 zile și în ziua expirării — pe email (cont gratuit) sau email + SMS (cont PRO). Pe telefonul mobil, aplicația PWA trimite și notificări push gratuit.'],
   ['Ce riscuri am cu actele expirate?', 'ITP expirat: amendă 1.822–4.050 lei + reținerea plăcuțelor. RCA expirat: 1.000–2.000 lei + răspundere personală nelimitată. Rovinietă lipsă: 500–1.000 lei (amendă automată prin camerele CNAIR). O singură notificare te poate scuti de mii de lei.'],
   ['Pot monitoriza mai multe mașini?', 'Da. Cu planul PRO adaugi oricâte vehicule — ideal pentru familii sau firme. Fiecare vehicul are propriile alerte.'],
