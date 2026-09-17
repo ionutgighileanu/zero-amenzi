@@ -311,3 +311,42 @@ Aș reveni dacă: Apare nevoia de roluri mai fine în flotă (azi owner/admin/me
 e moștenit din `memberships` fără să fie folosit diferențiat), sau dacă
 abonamentul trebuie să devină per-spațiu cu preț de volum în loc de per-vehicul
 — ambele ar cere revenit la modelul de facturare, nu la structura spațiilor.
+
+## D-020 · 2026-09 · Incident: signup rupt — triggerul on_auth_user_created lipsea din producție
+
+Context: Imediat după push-ul la D-019, login-ul a picat complet pe
+producție (`/app/garage` crăpa la încărcare). Asumpția „baza e goală" din
+D-019 (vezi consecințele de mai sus) era greșită — existau deja 2 conturi
+în `auth.users`.
+
+Cauza reală, descoperită prin interogare directă a bazei: `public.users`
+avea 0 rânduri, deși `auth.users` avea 2. Triggerul `on_auth_user_created`
+(creat inițial în 20260720143336_functions.sql) lipsea complet din
+producție — niciun cod din istoricul migrațiilor nu-l dropează explicit, deci
+a fost șters manual la un moment dat, în afara fluxului de migrare (drift
+netrackuit). D-019 făcuse `create or replace function handle_new_user()`,
+ceea ce actualizează corpul funcției, dar nu recreează legătura trigger →
+funcție dacă triggerul nu mai există.
+
+Efect: niciun signup, vechi sau nou, nu mai popula `public.users` sau
+`public.spaces`. `/app/garage` redirecta userii fără spațiu spre
+`/app/organizations/new`, iar în plus un service worker vechi din cache
+(D-012) agrava simptomul — pagina crăpa la nivel de browser înainte să
+apuce să redirecteze (confirmat: mergea corect în incognito).
+
+Fix aplicat (migrația 20260917160000):
+
+1. Recreat `on_auth_user_created` pe `auth.users` → `handle_new_user()`.
+2. Backfill `public.users` din `auth.users` pentru conturile scăpate.
+3. Backfill `public.spaces` (kind='personal') pentru userii de la pasul 2 —
+   triggerul `on_space_created` creează automat membership-ul aferent.
+
+De ce nu am revenit la migrarea distructivă din D-019: efectul deja produs
+(tabelele vechi șterse) era ireversibil și fără pierdere reală, pentru că
+nu existau vehicule/șoferi în ele — doar cele 2 conturi trebuiau reparate.
+
+Aș reveni dacă: Se mai găsește drift necunoscut între migrațiile din
+`supabase/migrations/` și starea reală de producție — semn că schimbări au
+fost făcute direct din SQL Editor fără migrație. În acel caz, rulez
+`supabase db diff --linked` înainte de orice migrație majoră ca să prind
+diferențele înainte, nu după deploy.
