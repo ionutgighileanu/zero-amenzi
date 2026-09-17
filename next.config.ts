@@ -47,9 +47,29 @@ const cspDirectives: Record<string, string[]> = {
   "frame-ancestors": ["'none'"],
 };
 
-const cspHeaderValue = Object.entries(cspDirectives)
-  .map(([directive, values]) => `${directive} ${values.join(" ")}`)
-  .join("; ");
+// Colectorul de rapoarte (src/app/api/csp-report/route.ts). Ambele mecanisme
+// sunt emise deliberat: `report-uri` e depreciat dar e singurul pe care îl
+// citesc Safari și browserele mai vechi, `report-to` e succesorul implementat
+// de Chrome/Edge. Un browser care le înțelege pe amândouă folosește doar
+// `report-to`, deci nu primim rapoarte duplicate.
+const CSP_REPORT_GROUP = "csp-endpoint";
+const CSP_REPORT_PATH = "/api/csp-report";
+
+const cspHeaderValue = [
+  ...Object.entries(cspDirectives).map(
+    ([directive, values]) => `${directive} ${values.join(" ")}`
+  ),
+  `report-uri ${CSP_REPORT_PATH}`,
+  `report-to ${CSP_REPORT_GROUP}`,
+].join("; ");
+
+// Header-ul care definește grupul numit în `report-to`. Fără el, directiva
+// `report-to` din CSP nu are unde să trimită nimic.
+const reportToHeaderValue = JSON.stringify({
+  group: CSP_REPORT_GROUP,
+  max_age: 10886400,
+  endpoints: [{ url: CSP_REPORT_PATH }],
+});
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -68,6 +88,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "Content-Security-Policy-Report-Only", value: cspHeaderValue },
+          { key: "Report-To", value: reportToHeaderValue },
           // Nu trimite URL-ul complet (inclusiv query string) către alte
           // origini la navigare — relevant fiindcă /verificare/[token] și
           // /verificare/status/[id] au identificatori neghicibili în URL,

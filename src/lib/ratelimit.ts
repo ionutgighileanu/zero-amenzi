@@ -82,6 +82,15 @@ const signupLimiter = makeLimiter(5, "1 h", "signup");
 const attachEmailLimiter = makeLimiter(10, "1 h", "attach-email");
 
 /**
+ * Rapoarte CSP: 100/oră. Endpointul e neautentificat prin necesitate —
+ * browserul trimite raportul fără cookie-uri — iar o pagină cu o violare
+ * repetată poate genera un raport la fiecare încărcare. Plafonul oprește
+ * inundarea logurilor fără să ascundă o problemă reală: 100 de rapoarte pe
+ * oră de la același IP spun deja tot ce e de spus.
+ */
+const cspReportLimiter = makeLimiter(100, "1 h", "csp-report");
+
+/**
  * IP-ul clientului din headerele de proxy.
  *
  * `x-real-ip` are prioritate: pe Vercel e scris de platformă din conexiunea
@@ -135,6 +144,10 @@ export async function limitSignup(ip: string) {
 
 export async function limitAttachEmail(ip: string) {
   return check(attachEmailLimiter, ip);
+}
+
+export async function limitCspReport(ip: string) {
+  return check(cspReportLimiter, ip);
 }
 
 /** Mesaj de așteptare în română, din secunde. */
