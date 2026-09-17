@@ -49,3 +49,7 @@ public/workbox-*.js.map
 # rapoarte gitleaks — conțin valorile brute ale secretelor găsite
 gitleaks-report.json
 gitleaks-*.json
+
+# config local de editor/tool — nu e cod de proiect
+.claude/settings.json
+.vscode/
