@@ -22,6 +22,7 @@ import {
 } from "@/lib/actions/vehicles";
 import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
 import { startUpgradeAction } from "@/lib/actions/payments";
+import { errorMessage } from "@/lib/errorMessage";
 import type { Space } from "@/lib/spaces";
 import { vehicleAccess } from "@/lib/subscription";
 
@@ -49,19 +50,19 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
-  // Mesajul întors de fluxul de plată. Cât timp niciun procesator nu e
-  // conectat, providerul răspunde „not_configured" și arătăm exact asta —
-  // nu simulăm o plată reușită.
-  const [upgradeNotice, setUpgradeNotice] = useState<string | null>(null);
+  // Un singur canal pentru tot ce trebuie spus utilizatorului: erori de la
+  // acțiuni și răspunsul fluxului de plată. Înainte fiecare catch făcea doar
+  // console.error, deci un eșec arăta exact ca „nu s-a întâmplat nimic".
+  const [notice, setNotice] = useState<string | null>(null);
 
   const requestUpgrade = async (vehicle: Vehicle) => {
-    setUpgradeNotice(null);
+    setNotice(null);
     const result = await startUpgradeAction(space.id, [vehicle.id]);
     if (result.status === "redirect") {
       window.location.href = result.url;
       return;
     }
-    setUpgradeNotice(result.message);
+    setNotice(result.message);
   };
   const [detailId, setDetailId] = useState<string | null>(null);
 
@@ -92,6 +93,7 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
       ]);
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -110,6 +112,7 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -123,6 +126,7 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -154,15 +158,15 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
         </div>
       </div>
 
-      {upgradeNotice && (
+      {notice && (
         <div
           className="mb-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900"
           role="status"
         >
           <Info size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
-          <span className="flex-1">{upgradeNotice}</span>
+          <span className="flex-1">{notice}</span>
           <button
-            onClick={() => setUpgradeNotice(null)}
+            onClick={() => setNotice(null)}
             className="shrink-0 font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 rounded"
           >
             Închide

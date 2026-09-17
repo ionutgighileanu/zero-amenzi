@@ -353,18 +353,15 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_space_id uuid;
 begin
   insert into public.users (id, email)
   values (new.id, new.email);
 
+  -- Membership-ul NU se creează aici: insertul de mai jos declanșează
+  -- on_space_created, care îl face. Dacă l-am insera și aici, al doilea insert
+  -- ar încălca `unique (user_id, space_id)` și ar rupe signup-ul complet.
   insert into public.spaces (kind, name, owner_id, trial_ends_at)
-  values ('personal', 'Garajul meu', new.id, now() + interval '1 year')
-  returning id into v_space_id;
-
-  insert into public.memberships (user_id, space_id, role)
-  values (new.id, v_space_id, 'owner');
+  values ('personal', 'Garajul meu', new.id, now() + interval '1 year');
 
   return new;
 end;

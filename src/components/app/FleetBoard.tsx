@@ -14,6 +14,7 @@ import {
   Truck,
   Users,
   Lock,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
@@ -49,6 +50,7 @@ import {
 import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
 import type { Space } from "@/lib/spaces";
 import { vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
+import { errorMessage } from "@/lib/errorMessage";
 
 type SortCol = "urgency" | "rca" | "itp" | "rovinieta" | "tahograf";
 type Sort = { col: SortCol; dir: "asc" | "desc" };
@@ -124,6 +126,9 @@ export function FleetBoard({
     onUndo: (id) => undoDeleteDriverAction(id, space.id),
   });
 
+  // Un singur canal pentru erorile acțiunilor. Înainte fiecare catch făcea
+  // doar console.error, deci un eșec arăta ca „nu s-a întâmplat nimic".
+  const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("vehicles");
   const [query, setQuery] = useState("");
   const [driverQuery, setDriverQuery] = useState("");
@@ -198,6 +203,7 @@ export function FleetBoard({
       ]);
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -216,6 +222,7 @@ export function FleetBoard({
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -229,6 +236,7 @@ export function FleetBoard({
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -241,6 +249,7 @@ export function FleetBoard({
       ]);
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -250,6 +259,7 @@ export function FleetBoard({
       setDrivers((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -265,6 +275,7 @@ export function FleetBoard({
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -276,6 +287,7 @@ export function FleetBoard({
       );
     } catch (err) {
       console.error(err);
+      setNotice(errorMessage(err));
     }
   };
 
@@ -294,6 +306,22 @@ export function FleetBoard({
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-7">
+      {notice && (
+        <div
+          className="mb-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900"
+          role="status"
+        >
+          <Info size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span className="flex-1">{notice}</span>
+          <button
+            onClick={() => setNotice(null)}
+            className="shrink-0 font-semibold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 rounded"
+          >
+            Închide
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight font-display">
