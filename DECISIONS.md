@@ -350,3 +350,70 @@ Aș reveni dacă: Se mai găsește drift necunoscut între migrațiile din
 fost făcute direct din SQL Editor fără migrație. În acel caz, rulez
 `supabase db diff --linked` înainte de orice migrație majoră ca să prind
 diferențele înainte, nu după deploy.
+
+## D-021 · 2026-09 · CSP implementat în Report-Only
+
+Context: Content Security Policy reduce impactul unui XSS prin restricționarea
+resurselor pe care browserul le poate încărca. Până acum `next.config.ts` avea
+doar Referrer-Policy, X-Content-Type-Options și X-Frame-Options, cu un
+comentariu care amâna CSP-ul de frica ruperii paginii de admin și a emailurilor.
+
+Decizie: Report-Only în prima fază — browserul raportează ce ar bloca fără să
+blocheze efectiv. Politica e construită ca obiect în `next.config.ts` și
+serializată într-un singur header, ca să fie citibilă și modificabilă pe
+directivă.
+
+Directive implementate:
+`default-src 'self'`, `script-src`, `style-src`, `font-src`, `connect-src`,
+`img-src`, `worker-src`, `manifest-src`, `object-src 'none'`, `base-uri 'self'`,
+`form-action 'self'`, `frame-ancestors 'none'`.
+
+Resurse externe permise — doar Supabase:
+- `https://*.supabase.co` în connect-src — REST și Auth, apelate din browser.
+- `wss://*.supabase.co` în connect-src — realtime. Momentan nu folosim niciun
+  `.channel()`, dar clientul poate deschide socketul, iar wildcard-ul pe același
+  serviciu nu lărgește suprafața de atac.
+
+Auditul a arătat mai puține dependențe externe decât ne așteptam:
+- **Fonturile nu au nevoie de domeniu extern.** `next/font/google` în
+  `src/app/layout.tsx` descarcă Archivo și Inter la build și le servește de pe
+  origine proprie. `fonts.googleapis.com` apare doar în `src/prototypes/`, care
+  nu intră în bundle. Deci fără `fonts.gstatic.com` în politică.
+- **Endpointurile de push NU trebuie în connect-src.** `fcm.googleapis.com`,
+  `updates.push.services.mozilla.com` și `web.push.apple.com` sunt contactate
+  fie de browser intern la `pushManager.subscribe()`, fie de serverul nostru
+  prin `web-push` — niciuna dintre căi nu trece prin CSP-ul paginii.
+- **Emailurile nu erau niciodată o problemă.** HTML-ul din `src/lib/email/` e
+  randat în clientul de email al destinatarului, nu în browserul nostru. Frica
+  din comentariul vechi era nefondată pe jumătate.
+- Niciun script extern, niciun CDN, zero `dangerouslySetInnerHTML` în codul de
+  producție.
+
+Next.js necesită unsafe-inline/unsafe-eval: **DA pentru ambele tipuri, parțial.**
+- `script-src` are nevoie de `'unsafe-inline'`. Verificat pe build: HTML-ul
+  generat conține 4 tag-uri `<script>` inline cu payload-ul de hidratare
+  (`self.__next_f.push(...)`). Fiind un header static, nu per-request, nu putem
+  emite nonce, deci nu există alternativă în abordarea asta.
+- `style-src` are nevoie de `'unsafe-inline'` — Tailwind v4, `motion` și
+  next/font injectează stiluri inline, plus trei atribute `style={{}}` în
+  `VerificationForm.tsx` și `AddVehicleModal.tsx`.
+- `'unsafe-eval'` e adăugat **doar în dev**, pentru HMR. Confirmat absent din
+  headerul de producție.
+
+Ce înseamnă asta onest: cu `script-src 'unsafe-inline'`, CSP-ul apără împotriva
+încărcării de script din *surse externe*, dar nu oprește un XSS inline. Câștigul
+real e în `object-src 'none'`, `base-uri`, `form-action` și `frame-ancestors`.
+Protecția completă contra XSS cere nonce generat în middleware, ceea ce forțează
+randare dinamică pe toate rutele și ar strica optimizarea statică a paginilor SEO
+(`/`, `/verificare`, `/termeni`, `/politica-confidentialitate`) — amânat
+deliberat, nu uitat.
+
+Pasul următor: după o săptămână în producție fără rapoarte de blocare legitimă,
+`Content-Security-Policy-Report-Only` devine `Content-Security-Policy`. Momentan
+nu avem `report-uri`/`report-to` configurat, deci violările se văd doar în
+consola browserului — pentru colectare agregată ar trebui adăugat un endpoint.
+
+Aș reveni dacă: Adăugăm un script extern (analytics, widget de plată) — atunci
+connect-src și script-src trebuie extinse explicit, nu lărgite cu wildcard. Sau
+dacă trecem pe nonce, moment în care `'unsafe-inline'` din script-src dispare și
+CSP-ul devine o apărare reală contra XSS.
