@@ -71,8 +71,12 @@ export const RO_PLATE_INPUT_MAX_LENGTH = 10;
  * ostil fără să respingă un camion cu plăcuță germană sau poloneză. */
 export const PLATE_INPUT_MAX_LENGTH = 32;
 
+/** Descrie REGULA, nu doar exemple. Varianta veche („Exemple: B 123 ABC sau
+ * CJ 45 XYZ") se citea ca o listă închisă — utilizatorii credeau că doar
+ * acele două plăcuțe sunt acceptate, în loc să vadă că ultimul grup trebuie
+ * să fie litere. */
 export const PLATE_INVALID_MESSAGE =
-  "Număr de înmatriculare invalid. Exemple: B 123 ABC sau CJ 45 XYZ.";
+  "Format așteptat: 1-2 litere (județul), 2-3 cifre, apoi 3 litere. Ex.: HR 05 ABC, B 123 XYZ.";
 
 /** Plafon de lungime pe adresa de email primită de la vizitatori anonimi. */
 export const EMAIL_MAX_LENGTH = 254;
