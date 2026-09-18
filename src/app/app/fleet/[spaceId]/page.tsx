@@ -88,7 +88,7 @@ export default async function FleetPage({ params }: { params: Promise<{ spaceId:
       space={space}
       initialVehicles={vehicles}
       initialDrivers={drivers}
-      initialAlertTypes={alertTypes}
+      alertTypes={alertTypes}
     />
   );
 }

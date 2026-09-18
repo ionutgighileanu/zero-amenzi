@@ -6,7 +6,8 @@ import { z } from "zod";
  * De ce contează și pentru acțiunile autentificate: un Server Action e un
  * endpoint HTTP obișnuit. Orice utilizator logat îl poate apela direct, cu ce
  * argumente vrea, fără să treacă prin interfață — deci o limită impusă doar
- * într-un modal (ex. MAX_ALERTS din AlertTypesModal) nu e o protecție.
+ * într-un modal (ex. plafonul de 17 caractere pe VIN din AddVehicleModal) nu
+ * e o protecție.
  *
  * RLS rămâne bariera care decide CINE poate atinge un rând. Schemele astea
  * decid CE formă are ce se scrie în el.

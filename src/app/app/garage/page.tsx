@@ -67,7 +67,7 @@ export default async function GaragePage() {
     <GarageBoard
       space={space}
       initialVehicles={vehicles}
-      initialAlertTypes={alertTypes}
+      alertTypes={alertTypes}
     />
   );
 }

@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Settings, Info } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { VehicleCard } from "@/components/app/VehicleCard";
 import { VehicleDetail } from "@/components/app/VehicleDetail";
 import { AddVehicleModal } from "@/components/app/AddVehicleModal";
-import { AlertTypesModal } from "@/components/app/AlertTypesModal";
 import { RcaModal } from "@/components/app/RcaModal";
 import { CascoModal } from "@/components/app/CascoModal";
 import { UndoBanner } from "@/components/app/UndoBanner";
@@ -20,7 +19,6 @@ import {
   softDeleteVehicleAction,
   undoDeleteVehicleAction,
 } from "@/lib/actions/vehicles";
-import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
 import { startUpgradeAction } from "@/lib/actions/payments";
 import { errorMessage } from "@/lib/errorMessage";
 import type { Space } from "@/lib/spaces";
@@ -29,10 +27,13 @@ import { vehicleAccess } from "@/lib/subscription";
 type GarageBoardProps = {
   space: Space;
   initialVehicles: Vehicle[];
-  initialAlertTypes: string[];
+  /** Tipurile din care se alege când adaugi o alertă suplimentară pe un
+   * vehicul. Citite din `alert_types`, cu DEFAULT_ALERT_TYPES pe post de
+   * fallback — nu se mai editează din interfață. */
+  alertTypes: string[];
 };
 
-export function GarageBoard({ space, initialVehicles, initialAlertTypes }: GarageBoardProps) {
+export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardProps) {
 
   const {
     visible: vehicles,
@@ -45,9 +46,7 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
     onUndo: (id) => undoDeleteVehicleAction(id, space.id),
   });
 
-  const [alertTypes, setAlertTypes] = useState<string[]>(initialAlertTypes);
   const [addOpen, setAddOpen] = useState(false);
-  const [alertsOpen, setAlertsOpen] = useState(false);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
   // Un singur canal pentru tot ce trebuie spus utilizatorului: erori de la
@@ -131,11 +130,6 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
     }
   };
 
-  const saveAlertTypes = (types: string[]) => {
-    setAlertTypes(types);
-    void saveAlertTypesAction(space.id, types);
-  };
-
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-7">
       <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
@@ -151,14 +145,9 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
                 : "Toate documentele sunt în regulă."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAlertsOpen(true)}>
-            <Settings size={16} className="mr-1.5" /> Tipuri alerte
-          </Button>
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus size={16} className="mr-1.5" /> Adaugă vehicul
-          </Button>
-        </div>
+        <Button size="sm" onClick={() => setAddOpen(true)}>
+          <Plus size={16} className="mr-1.5" /> Adaugă vehicul
+        </Button>
       </div>
 
       {notice && (
@@ -205,13 +194,6 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
 
       {addOpen && (
         <AddVehicleModal onClose={() => setAddOpen(false)} onSubmit={addVehicle} strictRoPlate />
-      )}
-      {alertsOpen && (
-        <AlertTypesModal
-          selected={alertTypes}
-          onSave={saveAlertTypes}
-          onClose={() => setAlertsOpen(false)}
-        />
       )}
       {detailVehicle && (
         <VehicleDetail

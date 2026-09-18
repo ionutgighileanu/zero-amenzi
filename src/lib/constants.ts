@@ -29,17 +29,9 @@ export const SITE_URL = resolveSiteUrl();
  * Supabase cere confirmare pe email înainte de a avea o sesiune activă. */
 export const PENDING_ORG_COOKIE = "ad_pending_org";
 
-export const PRESET_ALERTS = [
-  "Stingător",
-  "Trusă medicală",
-  "Service",
-  "CASCO",
-  "Leasing",
-  "Revizie",
-  "Impozit auto",
-  "Verificare stingător",
-];
-
+/** Tipurile propuse în dropdown-ul „Alerte suplimentare" de pe un vehicul,
+ * când spațiul n-are rânduri proprii în `alert_types`. AddDocForm adaugă
+ * „Altul", deci lista e o comoditate, nu o constrângere. */
 export const DEFAULT_ALERT_TYPES = [
   "Stingător",
   "Trusă medicală",
@@ -48,8 +40,6 @@ export const DEFAULT_ALERT_TYPES = [
   "Leasing",
   "Revizie",
 ];
-
-export const MAX_ALERTS = 15;
 
 /** Părțile unei plăcuțe RO, pe forma compactă (fără spații/cratime):
  * „B" + „12" + „ABC" sau „CJ" + „34" + „DEF". Folosit de normalizePlate()
@@ -110,7 +100,6 @@ export const FIELD_MAX_LENGTH = {
   /** Tip document sau atestat, inclusiv textul liber de la „Alt tip…". */
   docType: 60,
   /** Nume tip de alertă suplimentară. */
-  alertTypeName: 60,
 } as const;
 
 /** Plafon pe numărul de notificări marcate ca citite dintr-un singur apel.

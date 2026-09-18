@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Plus,
   Search,
-  Settings,
   Truck,
   Users,
   Lock,
@@ -24,7 +23,6 @@ import { FleetVehicleCard } from "@/components/app/FleetVehicleCard";
 import { DriverDetail, driverInitials } from "@/components/app/DriverDetail";
 import { AddVehicleModal } from "@/components/app/AddVehicleModal";
 import { AddDriverModal } from "@/components/app/AddDriverModal";
-import { AlertTypesModal } from "@/components/app/AlertTypesModal";
 import { RcaModal } from "@/components/app/RcaModal";
 import { CascoModal } from "@/components/app/CascoModal";
 import { UndoBanner } from "@/components/app/UndoBanner";
@@ -47,7 +45,6 @@ import {
   undoDeleteDriverAction,
   updateDriverAction,
 } from "@/lib/actions/drivers";
-import { saveAlertTypesAction } from "@/lib/actions/alertTypes";
 import type { Space } from "@/lib/spaces";
 import { vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 import { errorMessage } from "@/lib/errorMessage";
@@ -94,14 +91,17 @@ type FleetBoardProps = {
   space: Space;
   initialVehicles: Vehicle[];
   initialDrivers: Driver[];
-  initialAlertTypes: string[];
+  /** Tipurile din care se alege când adaugi o alertă suplimentară pe un
+   * vehicul. Citite din `alert_types`, cu DEFAULT_ALERT_TYPES pe post de
+   * fallback — nu se mai editează din interfață. */
+  alertTypes: string[];
 };
 
 export function FleetBoard({
   space,
   initialVehicles,
   initialDrivers,
-  initialAlertTypes,
+  alertTypes,
 }: FleetBoardProps) {
 
   const {
@@ -135,10 +135,8 @@ export function FleetBoard({
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>({ col: "urgency", dir: "asc" });
 
-  const [alertTypes, setAlertTypes] = useState<string[]>(initialAlertTypes);
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const [addDriverOpen, setAddDriverOpen] = useState(false);
-  const [alertsOpen, setAlertsOpen] = useState(false);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
   const [detailVehicleId, setDetailVehicleId] = useState<string | null>(null);
@@ -291,11 +289,6 @@ export function FleetBoard({
     }
   };
 
-  const saveAlertTypes = (types: string[]) => {
-    setAlertTypes(types);
-    void saveAlertTypesAction(space.id, types);
-  };
-
   const onDrivers = tab === "drivers";
 
   const kpis = [
@@ -335,17 +328,12 @@ export function FleetBoard({
                 : "Toate documentele sunt în regulă."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAlertsOpen(true)}>
-            <Settings size={16} className="mr-1.5" /> Tipuri alerte
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => (onDrivers ? setAddDriverOpen(true) : setAddVehicleOpen(true))}
-          >
-            <Plus size={16} className="mr-1.5" /> {onDrivers ? "Adaugă șofer" : "Adaugă vehicul"}
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          onClick={() => (onDrivers ? setAddDriverOpen(true) : setAddVehicleOpen(true))}
+        >
+          <Plus size={16} className="mr-1.5" /> {onDrivers ? "Adaugă șofer" : "Adaugă vehicul"}
+        </Button>
       </div>
 
       <div className="space-y-5">
@@ -640,13 +628,6 @@ export function FleetBoard({
       )}
       {addDriverOpen && (
         <AddDriverModal onClose={() => setAddDriverOpen(false)} onSubmit={addDriver} />
-      )}
-      {alertsOpen && (
-        <AlertTypesModal
-          selected={alertTypes}
-          onSave={saveAlertTypes}
-          onClose={() => setAlertsOpen(false)}
-        />
       )}
       {detailVehicle && (
         <VehicleDetail
