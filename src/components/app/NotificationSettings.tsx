@@ -2,8 +2,28 @@
 
 import { useState } from "react";
 import { Switch } from "@/components/ui/Switch";
-import { isPushSupported, subscribePush, unsubscribePush } from "@/lib/push/browser";
+import {
+  isPushSupported,
+  subscribePush,
+  unsubscribePush,
+  type PushFailureReason,
+} from "@/lib/push/browser";
 import { updateEmailNotificationsAction } from "@/lib/actions/settings";
+
+/** Fiecare motiv cere altă acțiune de la utilizator — de-aia nu mai există
+ * un singur mesaj generic. Vezi PushFailureReason în src/lib/push/browser.ts. */
+const PUSH_ERROR_MESSAGES: Record<PushFailureReason, string> = {
+  unsupported: "Browserul tău nu suportă notificări push.",
+  "not-configured": "Notificările push nu sunt configurate pe server.",
+  "permission-denied": "Browser-ul blochează notificările. Verifică setările site-ului.",
+  "sw-unavailable":
+    "Aplicația nu e încă pregătită pentru notificări. Reîncarcă pagina și încearcă din nou.",
+  "push-service-failed": "Nu am putut activa notificările. Încearcă din nou.",
+  "endpoint-rejected": "Serviciul de notificări al browserului tău nu e acceptat.",
+  unauthorized: "Sesiunea a expirat. Autentifică-te din nou.",
+  network: "Conexiunea s-a întrerupt. Verifică internetul și încearcă din nou.",
+  server: "Nu am putut salva setarea. Încearcă din nou.",
+};
 
 type NotificationSettingsProps = {
   initialEmailEnabled: boolean;
@@ -29,33 +49,36 @@ export function NotificationSettings({
     });
   };
 
-  const togglePush = async (next: boolean) => {
+  /**
+   * Optimistic: slider-ul se mută instant, lanțul real rulează în fundal.
+   *
+   * Înainte, comutatorul aștepta tot flow-ul — permisiune, apoi
+   * `pushManager.subscribe()` (0,5–2 s de negociere VAPID), apoi POST — și
+   * abia la final se mișca. Pe mobil asta se simțea ca un buton mort.
+   *
+   * Nu e `async` și nu are `await` înaintea apelului: `requestPermission()`
+   * are nevoie de gestul utilizatorului încă „proaspăt", iar un await
+   * intermediar l-ar consuma și promptul n-ar mai apărea.
+   */
+  const togglePush = (next: boolean) => {
     setPushError(null);
-
-    if (!next) {
-      setPushEnabled(false);
-      setPushBusy(true);
-      await unsubscribePush();
-      setPushBusy(false);
-      return;
-    }
-
-    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-      setPushError("Trebuie să activezi notificările din setările browserului.");
-      return;
-    }
-
+    setPushEnabled(next);
     setPushBusy(true);
-    const ok = await subscribePush();
-    setPushBusy(false);
 
-    if (ok) {
-      setPushEnabled(true);
-    } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-      setPushError("Trebuie să activezi notificările din setările browserului.");
-    } else {
-      setPushError("Nu am putut activa notificările. Încearcă din nou.");
-    }
+    const operation = next ? subscribePush() : unsubscribePush();
+
+    operation
+      .then((result) => {
+        if (result.ok) return;
+        setPushEnabled(!next); // rollback: starea reală n-a fost atinsă
+        setPushError(PUSH_ERROR_MESSAGES[result.reason]);
+      })
+      .catch((err) => {
+        console.error("[push] eroare neprevăzută la comutare:", err);
+        setPushEnabled(!next);
+        setPushError(PUSH_ERROR_MESSAGES["push-service-failed"]);
+      })
+      .finally(() => setPushBusy(false));
   };
 
   return (
@@ -99,11 +122,16 @@ export function NotificationSettings({
           <Switch
             checked={pushEnabled}
             onChange={togglePush}
-            disabled={!supported || pushBusy}
+            disabled={!supported}
+            busy={pushBusy}
             label="Alerte push"
           />
         </div>
-        {pushError && <p className="text-xs text-red-600 mt-2">{pushError}</p>}
+        {pushError && (
+          <p className="text-xs text-red-600 mt-2" role="alert">
+            {pushError}
+          </p>
+        )}
       </div>
     </div>
   );
