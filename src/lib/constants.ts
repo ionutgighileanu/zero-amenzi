@@ -57,17 +57,32 @@ export const MAX_ALERTS = 15;
  * permisiv: nu respinge combinații de litere rezervate, fiindcă scopul e
  * igiena inputului, nu validarea oficială. Plăcuțele temporare și cele
  * speciale NU trec. */
-export const RO_PLATE_PARTS = /^([A-Z]{1,2})(\d{2,3})([A-Z]{3})$/;
+export const RO_PLATE_PARTS = /^([A-Z]{1,2})(\d{2,3})([A-HJ-NPR-Z]{3})$/;
 
 /** Forma canonică, cu spații simple — singura acceptată la scriere în DB.
  * Orice input trece întâi prin normalizePlate(), deci regexul ăsta validează
- * ieșirea normalizării, nu inputul brut. */
-export const RO_PLATE_REGEX = /^[A-Z]{1,2} \d{2,3} [A-Z]{3}$/;
+ * ieșirea normalizării, nu inputul brut. Grupul de litere exclude I, O, Q,
+ * care nu se emit pe plăcuțe RO (se confundă cu 1 și 0). */
+export const RO_PLATE_REGEX = /^[A-Z]{1,2} \d{2,3} [A-HJ-NPR-Z]{3}$/;
 
-/** Plafon pe inputul BRUT de plăcuță, înainte de normalizare — mărginește
- * munca pe un input ostil. Generos față de cele 10 caractere ale formei
- * canonice, ca să tolereze spațiere ciudată („B   12   ABC"). */
+/** Validarea LIVE a inputului brut, la tastare — spațiile sunt opționale ca
+ * să nu marcheze „B123ABC" drept greșit pe măsură ce omul scrie. Aceeași
+ * regulă ca RO_PLATE_REGEX, doar mai tolerantă la spațiere. */
+export const RO_PLATE_INPUT_REGEX = /^[A-Z]{1,2}\s?\d{2,3}\s?[A-HJ-NPR-Z]{3}$/;
+
+/** Plafon HARD pe inputul de plăcuță RO: forma canonică maximă e
+ * „AB 123 ABC" = 10 caractere. Aplicat și pe `maxLength` în UI, și ca
+ * fail-fast pe server, înainte de rate limit sau parse — un input mai lung
+ * nu poate fi o plăcuță RO, deci nu merită nicio procesare. */
+export const RO_PLATE_INPUT_MAX_LENGTH = 10;
+
+/** Plafon pe inputul BRUT de plăcuță la vehiculele de flotă, unde acceptăm
+ * și numere înmatriculate în afara României. Mărginește munca pe un input
+ * ostil fără să respingă un camion cu plăcuță germană sau poloneză. */
 export const PLATE_INPUT_MAX_LENGTH = 32;
+
+export const PLATE_INVALID_MESSAGE =
+  "Număr de înmatriculare invalid. Exemple: B 123 ABC sau CJ 45 XYZ.";
 
 /** Plafon de lungime pe adresa de email primită de la vizitatori anonimi. */
 export const EMAIL_MAX_LENGTH = 254;

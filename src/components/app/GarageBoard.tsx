@@ -203,7 +203,9 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
         </motion.button>
       </div>
 
-      {addOpen && <AddVehicleModal onClose={() => setAddOpen(false)} onSubmit={addVehicle} />}
+      {addOpen && (
+        <AddVehicleModal onClose={() => setAddOpen(false)} onSubmit={addVehicle} strictRoPlate />
+      )}
       {alertsOpen && (
         <AlertTypesModal
           selected={alertTypes}

@@ -5,19 +5,35 @@ import { Zap } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { isValidRoPlateInput, sanitizePlateInput } from "@/lib/plate";
+import {
+  PLATE_INPUT_MAX_LENGTH,
+  PLATE_INVALID_MESSAGE,
+  RO_PLATE_INPUT_MAX_LENGTH,
+} from "@/lib/constants";
 
 type AddVehicleModalProps = {
   onClose: () => void;
   onSubmit: (plate: string, vin: string) => void;
+  /**
+   * Garaj personal: plăcuță RO strictă, validată live, plafon 10.
+   * Flotă (implicit): permisiv — camioanele B2B pot fi înmatriculate în afara
+   * României, deci doar majuscule + plafon 32, fără verificare de format.
+   */
+  strictRoPlate?: boolean;
 };
 
-export function AddVehicleModal({ onClose, onSubmit }: AddVehicleModalProps) {
+export function AddVehicleModal({ onClose, onSubmit, strictRoPlate = false }: AddVehicleModalProps) {
   const [plate, setPlate] = useState("");
   const [vin, setVin] = useState("");
 
+  const plateValid = strictRoPlate ? isValidRoPlateInput(plate) : plate.trim().length > 0;
+  const showPlateError = strictRoPlate && plate.length > 0 && !plateValid;
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit(plate.trim().toUpperCase(), vin.trim().toUpperCase());
+    if (!plateValid) return;
+    onSubmit(plate.trim(), vin.trim().toUpperCase());
     onClose();
   };
 
@@ -28,15 +44,27 @@ export function AddVehicleModal({ onClose, onSubmit }: AddVehicleModalProps) {
       subtitle="Doar două câmpuri. Restul datelor le preluăm noi."
     >
       <form className="space-y-4" onSubmit={submit}>
-        <Input
-          label="Număr de înmatriculare"
-          placeholder="B 100 ABC"
-          required
-          autoFocus
-          value={plate}
-          onChange={(e) => setPlate(e.target.value)}
-          style={{ textTransform: "uppercase" }}
-        />
+        <div>
+          <Input
+            label="Număr de înmatriculare"
+            placeholder="B 100 ABC"
+            required
+            autoFocus
+            value={plate}
+            onChange={(e) => setPlate(sanitizePlateInput(e.target.value, strictRoPlate))}
+            maxLength={strictRoPlate ? RO_PLATE_INPUT_MAX_LENGTH : PLATE_INPUT_MAX_LENGTH}
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={showPlateError}
+            aria-describedby={showPlateError ? "plate-eroare" : undefined}
+          />
+          {showPlateError && (
+            <p id="plate-eroare" className="text-sm text-red-600 mt-1.5" role="alert">
+              {PLATE_INVALID_MESSAGE}
+            </p>
+          )}
+        </div>
         <Input
           label="Serie șasiu (VIN)"
           placeholder="17 caractere"
@@ -45,21 +73,23 @@ export function AddVehicleModal({ onClose, onSubmit }: AddVehicleModalProps) {
           minLength={17}
           maxLength={17}
           value={vin}
-          onChange={(e) => setVin(e.target.value)}
-          style={{ textTransform: "uppercase" }}
+          onChange={(e) => setVin(e.target.value.toUpperCase())}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
         />
         <div className="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-lg p-3">
           <Zap size={16} className="text-blue-700 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-600 leading-relaxed">
-            Verificăm automat ITP, RCA și rovinieta în bazele oficiale și îți
-            setăm alertele. Nu introduci nicio dată manual.
+            Verificăm ITP, RCA și rovinieta în bazele oficiale și îți setăm
+            alertele. Nu introduci nicio dată manual.
           </p>
         </div>
         <div className="pt-2 flex flex-col-reverse sm:flex-row gap-3">
           <Button variant="outline" size="sm" onClick={onClose} className="flex-1">
             Anulează
           </Button>
-          <Button type="submit" size="sm" className="flex-1">
+          <Button type="submit" size="sm" className="flex-1" disabled={!plateValid}>
             Verifică și adaugă
           </Button>
         </div>

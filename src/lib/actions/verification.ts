@@ -8,7 +8,12 @@ import { sendVerificationResultEmail } from "@/lib/email/send-verification-resul
 import { createVerificationNotification } from "@/lib/verificationNotification";
 import { fetchSpace, spacePath } from "@/lib/spaces";
 import { CORE_DOC_TYPES } from "@/lib/vehicles";
-import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
+import {
+  ADMIN_EMAIL,
+  PLATE_INVALID_MESSAGE,
+  RO_PLATE_INPUT_MAX_LENGTH,
+  type VerificationResultValue,
+} from "@/lib/constants";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   attachVerificationEmailSchema,
@@ -33,6 +38,15 @@ export async function createVerificationRequestAction(
   _prevState: CreateVerificationState,
   formData: FormData
 ): Promise<CreateVerificationState> {
+  // Fail-fast pe lungime, ÎNAINTE de orice — inclusiv înaintea rate
+  // limit-ului, care costă un apel Redis. Un input mai lung de 10 caractere
+  // nu poate fi plăcuță RO, deci nu merită nici măcar atât. UI-ul are
+  // maxLength, dar asta apără și de cine sare peste UI.
+  const rawPlate = String(formData.get("plate") ?? "");
+  if (rawPlate.length > RO_PLATE_INPUT_MAX_LENGTH) {
+    return { status: "error", error: PLATE_INVALID_MESSAGE };
+  }
+
   // Rate limit înaintea parsării: o cerere respinsă aici nu trebuie să coste
   // nici măcar validare. Fiecare cerere acceptată declanșează muncă manuală
   // de la admin și consumă din cota de email (F-02).
@@ -45,7 +59,7 @@ export async function createVerificationRequestAction(
   // la un vizitator neautentificat. Schema normalizează plăcuța și plafonează
   // lungimile — vezi src/lib/validation/verification.ts.
   const parsed = createVerificationRequestSchema.safeParse({
-    plate: String(formData.get("plate") ?? ""),
+    plate: rawPlate,
     email: String(formData.get("email") ?? ""),
   });
 

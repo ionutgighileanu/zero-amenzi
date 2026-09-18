@@ -6,6 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchSpace, spacePath } from "@/lib/spaces";
 import { canAddVehicle } from "@/lib/subscription";
 import {
+  PLATE_INPUT_MAX_LENGTH,
+  PLATE_INVALID_MESSAGE,
+  RO_PLATE_INPUT_MAX_LENGTH,
+  RO_PLATE_REGEX,
+} from "@/lib/constants";
+import {
   addVehicleDocSchema,
   addVehicleSchema,
   deleteVehicleDocSchema,
@@ -43,11 +49,26 @@ async function revalidateSpace(spaceId: string) {
 }
 
 export async function addVehicleAction(spaceId: string, plate: string, vin: string) {
+  // Fail-fast pe lungime, înaintea oricărei procesări: schema ar fi tăiat
+  // tăcut la 32, dar un input de 5 000 de caractere nu e o greșeală de
+  // tastare, e cineva care sare peste UI.
+  if (plate.length > PLATE_INPUT_MAX_LENGTH) throw new Error(PLATE_INVALID_MESSAGE);
+
   const input = addVehicleSchema.parse({ spaceId, plate, vin });
   const supabase = await createClient();
 
   const space = await fetchSpace(supabase, input.spaceId);
   if (!space) throw new Error("Spațiul nu există sau nu ai acces la el.");
+
+  // Garaj personal = plăcuță RO strictă, aceeași regulă ca la verificarea
+  // publică. Flotele rămân permisive (camioane înmatriculate în afara RO).
+  // Verificat pe server, nu doar în modal — UI-ul poate fi ocolit.
+  if (
+    space.kind === "personal" &&
+    (input.plate.length > RO_PLATE_INPUT_MAX_LENGTH || !RO_PLATE_REGEX.test(input.plate))
+  ) {
+    throw new Error(PLATE_INVALID_MESSAGE);
+  }
 
   // Verificare înainte de insert, pentru un mesaj clar. Nu înlocuiește
   // triggerul din DB — vezi comentariul de la subscriptionErrorMessage.

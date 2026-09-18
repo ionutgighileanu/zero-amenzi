@@ -1,4 +1,34 @@
-import { PLATE_INPUT_MAX_LENGTH, RO_PLATE_PARTS } from "@/lib/constants";
+import {
+  PLATE_INPUT_MAX_LENGTH,
+  RO_PLATE_INPUT_MAX_LENGTH,
+  RO_PLATE_INPUT_REGEX,
+  RO_PLATE_PARTS,
+} from "@/lib/constants";
+
+/**
+ * Curăță inputul de plăcuță PE MĂSURĂ ce omul tastează: majuscule, doar
+ * litere/cifre/spațiu, un singur spațiu între grupuri, plafon de lungime.
+ * Blochează la sursă ce serverul ar respinge oricum, ca eroarea să nu
+ * apară abia după submit. `strict` = plăcuță RO (plafon 10); altfel flotă,
+ * unde acceptăm numere străine (plafon 32).
+ */
+export function sanitizePlateInput(raw: string, strict = true): string {
+  const max = strict ? RO_PLATE_INPUT_MAX_LENGTH : PLATE_INPUT_MAX_LENGTH;
+  // Flota păstrează cratima: „DE-ABC-123" e forma reală a unei plăcuțe
+  // germane, iar normalizePlate o lasă intenționat neatinsă.
+  const allowed = strict ? /[^A-Z0-9 ]/g : /[^A-Z0-9 -]/g;
+  return raw
+    .toUpperCase()
+    .replace(allowed, "")
+    .replace(/ {2,}/g, " ")
+    .trimStart()
+    .slice(0, max);
+}
+
+/** Formatul e de plăcuță RO? Pe inputul brut, cu spații opționale. */
+export function isValidRoPlateInput(raw: string): boolean {
+  return RO_PLATE_INPUT_REGEX.test(raw.trim());
+}
 
 /**
  * Aduce o plăcuță la forma canonică unică: „B 12 ABC", „CJ 34 DEF".
