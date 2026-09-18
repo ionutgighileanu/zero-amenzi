@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Zap } from "lucide-react";
+import { Lock, Zap } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 import { isValidRoPlateInput, sanitizePlateInput } from "@/lib/plate";
 import {
   PLATE_INPUT_MAX_LENGTH,
@@ -21,9 +22,18 @@ type AddVehicleModalProps = {
    * României, deci doar majuscule + plafon 32, fără verificare de format.
    */
   strictRoPlate?: boolean;
+  /** Motivul pentru care spațiul nu mai poate primi vehicule (D-024). Când e
+   * setat, modalul arată upsell-ul în loc de formular — nu are rost să lași
+   * omul să completeze ca să afle la submit că e blocat. */
+  blockedReason?: string | null;
 };
 
-export function AddVehicleModal({ onClose, onSubmit, strictRoPlate = false }: AddVehicleModalProps) {
+export function AddVehicleModal({
+  onClose,
+  onSubmit,
+  strictRoPlate = false,
+  blockedReason,
+}: AddVehicleModalProps) {
   const [plate, setPlate] = useState("");
   const [vin, setVin] = useState("");
 
@@ -36,6 +46,34 @@ export function AddVehicleModal({ onClose, onSubmit, strictRoPlate = false }: Ad
     onSubmit(plate.trim(), vin.trim().toUpperCase());
     onClose();
   };
+
+  if (blockedReason) {
+    return (
+      <Modal onClose={onClose} title="Ai nevoie de Premium">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <Lock size={18} className="text-brand shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-sm text-slate-700">{blockedReason}</p>
+          </div>
+          <p className="text-sm text-slate-600">
+            Premium costă <strong>{VEHICLE_PRICE_RON_PER_YEAR} lei pe an per vehicul</strong> și
+            include verificarea actelor, alertele pe email și notificările push.
+          </p>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
+            <Button variant="outline" size="sm" onClick={onClose} className="flex-1">
+              Închide
+            </Button>
+            <Button size="sm" className="flex-1" disabled title="Plata online vine în curând">
+              Trece la Premium
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500">
+            Plata online vine în curând. Până atunci, scrie-ne și îți activăm Premium manual.
+          </p>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal

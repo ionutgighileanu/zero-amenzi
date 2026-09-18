@@ -534,3 +534,64 @@ Aș reveni dacă: Apar integrările automate cu RAR/ASF/CNAIR (D-010). Atunci
 completarea cererii o face un job, nu adminul, dar cardul, notificarea și
 scrierea în `vehicle_docs` rămân identice — fluxul e deja agnostic la cine
 completează.
+
+## D-024 · 2026-09 · Trialul acoperă un singur vehicul
+
+Context: D-019 stabilise „trial de 1 an per spațiu, vehicule nelimitate", cu
+monetizarea pe timp: după un an, 12 lei/an per vehicul. În practică asta
+însemna că un utilizator cu o flotă de 20 de mașini le ținea pe toate gratuit
+timp de un an — exact clientul de la care venea cea mai mare valoare plătea
+zero cel mai mult timp. Verificarea actelor costă muncă manuală per vehicul
+(wizard-of-oz, D-010/D-023), deci costul nostru creștea liniar cu numărul de
+vehicule, iar venitul din trial rămânea zero.
+
+Decizie (INVERSEAZĂ parțial D-019): perioada gratuită acoperă **un singur
+vehicul**, identic la B2C și B2B. Al doilea vehicul se plătește imediat,
+indiferent cât a mai rămas din trial. După primul an se plătește pentru toate.
+Plafonul e pe trial, nu pe mărimea garajului: un vehicul plătit nu intră în
+numărătoare, deci cine plătește nu e penalizat.
+
+Ce se numără, și de ce contează fiecare detaliu:
+- **Vehiculele NEPLĂTITE** (`paid_until is null or paid_until <= now()`).
+  Plafonul e pe trial; plata iese din el.
+- **Inclusiv cele soft-deleted** (`deleted_at` setat). Trialul se consumă la
+  adăugare și nu se eliberează prin ștergere — altfel ciclul
+  adaugă/șterge/adaugă ar da vehicule gratuite la infinit. E o a doua barieră,
+  peste `plate_trials`, care leagă trialul de plăcuță: aceea oprește reluarea
+  pe alt cont, asta oprește reluarea pe același cont.
+- **Doar când spațiul e `trialing`.** Un spațiu `active` (a plătit o dată)
+  poate adăuga oricâte: fără `paid_until` propriu, `vehicleAccess` le întoarce
+  `locked`, deci datele RCA/ITP/Rovinietă le sunt ascunse. Nu e acces gratuit,
+  e doar un vehicul care așteaptă plata.
+
+Aplicat în trei locuri, DB-ul fiind autoritatea:
+1. `enforce_vehicle_subscription_rules` (migrarea 20260918150000) — ridică
+   `trial_vehicle_limit`. Prinde și un POST direct pe REST cu cheia anon.
+2. `canAddVehicle(space, unpaidVehicleCount)` — semnătură schimbată, pentru
+   mesajul clar din interfață înainte de insert.
+3. `AddVehicleModal` — când e blocat arată upsell în loc de formular. Nu are
+   rost să lași omul să completeze ca să afle la submit că e blocat.
+
+CONDIȚIE DE CURSĂ, acceptată deliberat: `count(*)` într-un trigger BEFORE
+INSERT nu e atomic, deci două inserturi simultane pot vedea ambele zero și
+trece amândouă. Consecința maximă e un vehicul gratuit în plus, pe un spațiu,
+o singură dată. Alternativa curată — index unic parțial pe (space_id) where
+paid_until is null — ar fi interzis și vehiculele neplătite din spațiile
+'active', care sunt legitime. Nu merită complexitatea.
+
+LIMITARE CUNOSCUTĂ, asumată la activare: butonul „Trece la Premium" din upsell
+e dezactivat, fiindcă `PaymentProvider` e încă `not-configured` (D-019).
+Practic, un utilizator ajuns la plafon nu are nicio cale automată de a
+continua — textul îi spune să ne scrie pentru activare manuală. Blocajul a
+fost activat conștient înaintea procesatorului, ca regula să fie în vigoare de
+la primii utilizatori, nu retroactiv.
+
+Vehiculele existente nu sunt afectate: triggerul rulează doar la INSERT, deci
+spațiile care au deja mai multe vehicule în trial le păstrează.
+
+Aș reveni dacă: Se conectează procesatorul de plată — atunci butonul din
+upsell trebuie legat de un flux care permite plata pentru un vehicul care nu
+există încă (azi `startUpgradeAction` cere `vehicleIds` existente, deci
+singura cale e să plătești vehiculul curent, ceea ce trece spațiul pe
+'active' și ridică plafonul). Sau dacă plafonul de 1 se dovedește prea agresiv
+la B2B, caz în care devine o coloană pe `spaces`, nu o constantă în cod.

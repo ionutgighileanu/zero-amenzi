@@ -22,7 +22,7 @@ import {
 import { startUpgradeAction } from "@/lib/actions/payments";
 import { errorMessage } from "@/lib/errorMessage";
 import type { Space } from "@/lib/spaces";
-import { vehicleAccess } from "@/lib/subscription";
+import { canAddVehicle, vehicleAccess } from "@/lib/subscription";
 
 type GarageBoardProps = {
   space: Space;
@@ -31,9 +31,17 @@ type GarageBoardProps = {
    * vehicul. Citite din `alert_types`, cu DEFAULT_ALERT_TYPES pe post de
    * fallback — nu se mai editează din interfață. */
   alertTypes: string[];
+  /** Vehiculele neplătite ale spațiului, inclusiv soft-deleted — baza
+   * plafonului de trial (D-024). */
+  unpaidVehicleCount: number;
 };
 
-export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardProps) {
+export function GarageBoard({
+  space,
+  initialVehicles,
+  alertTypes,
+  unpaidVehicleCount,
+}: GarageBoardProps) {
 
   const {
     visible: vehicles,
@@ -47,6 +55,10 @@ export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardP
   });
 
   const [addOpen, setAddOpen] = useState(false);
+  // Ținut local ca să crească imediat după o adăugare reușită: altfel omul ar
+  // putea deschide modalul din nou și completa formularul, doar ca să fie
+  // respins de server.
+  const [unpaidCount, setUnpaidCount] = useState(unpaidVehicleCount);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
   // Un singur canal pentru tot ce trebuie spus utilizatorului: erori de la
@@ -65,6 +77,7 @@ export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardP
   };
   const [detailId, setDetailId] = useState<string | null>(null);
 
+  const addBlocked = canAddVehicle(space, unpaidCount);
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
   const pendingCount = vehicles.filter((v) => v.verificationPending).length;
   const detailVehicle = detailId ? vehicles.find((v) => v.id === detailId) : null;
@@ -91,6 +104,7 @@ export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardP
         },
         ...list,
       ]);
+      setUnpaidCount((n) => n + 1);
     } catch (err) {
       console.error(err);
       setNotice(errorMessage(err));
@@ -193,7 +207,12 @@ export function GarageBoard({ space, initialVehicles, alertTypes }: GarageBoardP
       </div>
 
       {addOpen && (
-        <AddVehicleModal onClose={() => setAddOpen(false)} onSubmit={addVehicle} strictRoPlate />
+        <AddVehicleModal
+          onClose={() => setAddOpen(false)}
+          onSubmit={addVehicle}
+          strictRoPlate
+          blockedReason={addBlocked.allowed ? null : addBlocked.reason}
+        />
       )}
       {detailVehicle && (
         <VehicleDetail

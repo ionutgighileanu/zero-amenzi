@@ -30,6 +30,15 @@ export default async function GaragePage() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  // Vehiculele neplătite, INCLUSIV cele soft-deleted — baza plafonului de
+  // trial (D-024). Interogare separată tocmai pentru că cea de sus filtrează
+  // `deleted_at`, iar un vehicul șters a consumat deja trialul.
+  const { count: unpaidVehicleCount } = await supabase
+    .from("vehicles")
+    .select("id", { count: "exact", head: true })
+    .eq("space_id", space.id)
+    .or(`paid_until.is.null,paid_until.lte.${new Date().toISOString()}`);
+
   const vehicleIds = (vehicleRows ?? []).map((v) => v.id);
   const { data: docRows } = vehicleIds.length
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
@@ -68,6 +77,7 @@ export default async function GaragePage() {
       space={space}
       initialVehicles={vehicles}
       alertTypes={alertTypes}
+      unpaidVehicleCount={unpaidVehicleCount ?? 0}
     />
   );
 }

@@ -40,6 +40,14 @@ export default async function FleetPage({ params }: { params: Promise<{ spaceId:
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  // Vehiculele neplătite, inclusiv soft-deleted — baza plafonului de trial
+  // (D-024). Se aplică identic la flote și la garajul personal.
+  const { count: unpaidVehicleCount } = await supabase
+    .from("vehicles")
+    .select("id", { count: "exact", head: true })
+    .eq("space_id", spaceId)
+    .or(`paid_until.is.null,paid_until.lte.${new Date().toISOString()}`);
+
   const vehicleIds = (vehicleRows ?? []).map((v) => v.id);
   const { data: docRows } = vehicleIds.length
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
@@ -89,6 +97,7 @@ export default async function FleetPage({ params }: { params: Promise<{ spaceId:
       initialVehicles={vehicles}
       initialDrivers={drivers}
       alertTypes={alertTypes}
+      unpaidVehicleCount={unpaidVehicleCount ?? 0}
     />
   );
 }

@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { fetchSpace, spacePath } from "@/lib/spaces";
-import { canAddVehicle } from "@/lib/subscription";
+import { canAddVehicle, TRIAL_LIMIT_MESSAGE } from "@/lib/subscription";
 import {
   PLATE_INPUT_MAX_LENGTH,
   PLATE_INVALID_MESSAGE,
@@ -30,6 +30,9 @@ import {
  * REST-ul direct ocolește complet codul ăsta.
  */
 function subscriptionErrorMessage(dbMessage: string): string | null {
+  if (dbMessage.includes("trial_vehicle_limit")) {
+    return TRIAL_LIMIT_MESSAGE;
+  }
   if (dbMessage.includes("plate_trial_already_used")) {
     return "Acest vehicul a beneficiat deja de perioada gratuită. Fă upgrade la Premium (12 lei/an).";
   }
@@ -72,7 +75,17 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
 
   // Verificare înainte de insert, pentru un mesaj clar. Nu înlocuiește
   // triggerul din DB — vezi comentariul de la subscriptionErrorMessage.
-  const allowed = canAddVehicle(space);
+  //
+  // `head: true` — avem nevoie doar de numărul de rânduri, nu de conținut.
+  // Fără filtru pe `deleted_at`: un vehicul șters a consumat deja trialul
+  // (D-024).
+  const { count: unpaidCount } = await supabase
+    .from("vehicles")
+    .select("id", { count: "exact", head: true })
+    .eq("space_id", input.spaceId)
+    .or(`paid_until.is.null,paid_until.lte.${new Date().toISOString()}`);
+
+  const allowed = canAddVehicle(space, unpaidCount ?? 0);
   if (!allowed.allowed) throw new Error(allowed.reason);
 
   const { data: vehicle, error } = await supabase

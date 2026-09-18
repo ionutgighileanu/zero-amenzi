@@ -46,7 +46,7 @@ import {
   updateDriverAction,
 } from "@/lib/actions/drivers";
 import type { Space } from "@/lib/spaces";
-import { vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
+import { canAddVehicle, vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 import { errorMessage } from "@/lib/errorMessage";
 
 type SortCol = "urgency" | "rca" | "itp" | "rovinieta" | "tahograf";
@@ -95,6 +95,9 @@ type FleetBoardProps = {
    * vehicul. Citite din `alert_types`, cu DEFAULT_ALERT_TYPES pe post de
    * fallback — nu se mai editează din interfață. */
   alertTypes: string[];
+  /** Vehiculele neplătite ale spațiului, inclusiv soft-deleted — baza
+   * plafonului de trial (D-024). Se aplică identic la B2C și B2B. */
+  unpaidVehicleCount: number;
 };
 
 export function FleetBoard({
@@ -102,6 +105,7 @@ export function FleetBoard({
   initialVehicles,
   initialDrivers,
   alertTypes,
+  unpaidVehicleCount,
 }: FleetBoardProps) {
 
   const {
@@ -136,6 +140,8 @@ export function FleetBoard({
   const [sort, setSort] = useState<Sort>({ col: "urgency", dir: "asc" });
 
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
+  // Crește local după o adăugare reușită — vezi comentariul din GarageBoard.
+  const [unpaidCount, setUnpaidCount] = useState(unpaidVehicleCount);
   const [addDriverOpen, setAddDriverOpen] = useState(false);
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
@@ -199,6 +205,7 @@ export function FleetBoard({
         },
         ...list,
       ]);
+      setUnpaidCount((n) => n + 1);
     } catch (err) {
       console.error(err);
       setNotice(errorMessage(err));
@@ -289,6 +296,7 @@ export function FleetBoard({
     }
   };
 
+  const addBlocked = canAddVehicle(space, unpaidCount);
   const onDrivers = tab === "drivers";
 
   const kpis = [
@@ -624,7 +632,11 @@ export function FleetBoard({
       </div>
 
       {addVehicleOpen && (
-        <AddVehicleModal onClose={() => setAddVehicleOpen(false)} onSubmit={addVehicle} />
+        <AddVehicleModal
+          onClose={() => setAddVehicleOpen(false)}
+          onSubmit={addVehicle}
+          blockedReason={addBlocked.allowed ? null : addBlocked.reason}
+        />
       )}
       {addDriverOpen && (
         <AddDriverModal onClose={() => setAddDriverOpen(false)} onSubmit={addDriver} />
