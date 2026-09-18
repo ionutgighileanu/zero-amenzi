@@ -41,24 +41,36 @@ export const DEFAULT_ALERT_TYPES = [
   "Revizie",
 ];
 
+/**
+ * Seria de 3 litere, cu reguli diferite pe poziții:
+ *   - prima literă: exclude I, O și Q
+ *   - literele 2-3: exclud doar Q, deci I și O sunt permise
+ *
+ * De-aia „BV 33 MIA" și „CJ 15 DOI" sunt valide, dar „BV 33 ION" nu — I e pe
+ * prima poziție. Ținut ca fragment de șir, nu duplicat în trei regexuri, ca
+ * regula să aibă o singură definiție: divergența dintre validarea live,
+ * forma canonică și normalizare ar respinge plăcuțe reale în funcție de cum
+ * le-a tastat omul.
+ */
+const RO_PLATE_SERIES = "[A-HJ-NPR-Z][A-PR-Z]{2}";
+
 /** Părțile unei plăcuțe RO, pe forma compactă (fără spații/cratime):
  * „B" + „12" + „ABC" sau „CJ" + „34" + „DEF". Folosit de normalizePlate()
- * (src/lib/plate.ts) ca să reconstruiască forma canonică. Deliberat puțin
- * permisiv: nu respinge combinații de litere rezervate, fiindcă scopul e
- * igiena inputului, nu validarea oficială. Plăcuțele temporare și cele
- * speciale NU trec. */
-export const RO_PLATE_PARTS = /^([A-Z]{1,2})(\d{2,3})([A-HJ-NPR-Z]{3})$/;
+ * (src/lib/plate.ts) ca să reconstruiască forma canonică. Plăcuțele
+ * temporare și cele speciale NU trec. */
+export const RO_PLATE_PARTS = new RegExp(`^([A-Z]{1,2})(\\d{2,3})(${RO_PLATE_SERIES})$`);
 
 /** Forma canonică, cu spații simple — singura acceptată la scriere în DB.
  * Orice input trece întâi prin normalizePlate(), deci regexul ăsta validează
- * ieșirea normalizării, nu inputul brut. Grupul de litere exclude I, O, Q,
- * care nu se emit pe plăcuțe RO (se confundă cu 1 și 0). */
-export const RO_PLATE_REGEX = /^[A-Z]{1,2} \d{2,3} [A-HJ-NPR-Z]{3}$/;
+ * ieșirea normalizării, nu inputul brut. */
+export const RO_PLATE_REGEX = new RegExp(`^[A-Z]{1,2} \\d{2,3} ${RO_PLATE_SERIES}$`);
 
 /** Validarea LIVE a inputului brut, la tastare — spațiile sunt opționale ca
  * să nu marcheze „B123ABC" drept greșit pe măsură ce omul scrie. Aceeași
  * regulă ca RO_PLATE_REGEX, doar mai tolerantă la spațiere. */
-export const RO_PLATE_INPUT_REGEX = /^[A-Z]{1,2}\s?\d{2,3}\s?[A-HJ-NPR-Z]{3}$/;
+export const RO_PLATE_INPUT_REGEX = new RegExp(
+  `^[A-Z]{1,2}\\s?\\d{2,3}\\s?${RO_PLATE_SERIES}$`
+);
 
 /** Plafon HARD pe inputul de plăcuță RO: forma canonică maximă e
  * „AB 123 ABC" = 10 caractere. Aplicat și pe `maxLength` în UI, și ca

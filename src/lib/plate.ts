@@ -25,9 +25,13 @@ export function sanitizePlateInput(raw: string, strict = true): string {
     .slice(0, max);
 }
 
-/** Formatul e de plăcuță RO? Pe inputul brut, cu spații opționale. */
+/** Formatul e de plăcuță RO? Pe inputul brut, cu spații opționale.
+ *
+ * Face majusculele singură: în aplicație inputul trece oricum prin
+ * sanitizePlateInput, dar funcția nu trebuie să depindă de asta — un apelant
+ * care uită ar respinge tăcut plăcuțe valide scrise cu litere mici. */
 export function isValidRoPlateInput(raw: string): boolean {
-  return RO_PLATE_INPUT_REGEX.test(raw.trim());
+  return RO_PLATE_INPUT_REGEX.test(raw.trim().toUpperCase());
 }
 
 /**
