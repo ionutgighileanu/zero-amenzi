@@ -181,8 +181,7 @@ export function FleetBoard({
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, docs } = await addVehicleAction(space.id, plate, vin);
-      const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
+      const { vehicle, verificationPending } = await addVehicleAction(space.id, plate, vin);
       setVehicles((list) => [
         {
           id: vehicle.id,
@@ -192,11 +191,12 @@ export function FleetBoard({
           paidUntil: vehicle.paid_until,
           access: vehicleAccess(space, vehicle.paid_until),
           truck: vehicle.is_truck,
-          itp: findDoc("ITP"),
-          rca: findDoc("RCA"),
-          rovinieta: findDoc("Rovinietă"),
+          itp: null,
+          rca: null,
+          rovinieta: null,
           tahograf: null,
           docs: [],
+          verificationPending,
           deleted_at: null,
         },
         ...list,
@@ -328,9 +328,11 @@ export function FleetBoard({
             {space.name}
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {problemCount === 0
-              ? "Toate documentele sunt în regulă."
-              : `${problemCount} ${problemCount === 1 ? "vehicul cere" : "vehicule cer"} atenție. Restul e în regulă.`}
+            {problemCount > 0
+              ? `${problemCount} ${problemCount === 1 ? "vehicul cere" : "vehicule cer"} atenție. Restul e în regulă.`
+              : vehicles.some((v) => v.verificationPending)
+                ? `${vehicles.filter((v) => v.verificationPending).length} în verificare. Te anunțăm când actele sunt confirmate.`
+                : "Toate documentele sunt în regulă."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -494,13 +496,13 @@ export function FleetBoard({
                             </div>
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap">
-                            <StatusCell date={v.rca} />
+                            <StatusCell date={v.rca} pending={v.verificationPending} />
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap">
-                            <StatusCell date={v.itp} />
+                            <StatusCell date={v.itp} pending={v.verificationPending} />
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap">
-                            <StatusCell date={v.rovinieta} />
+                            <StatusCell date={v.rovinieta} pending={v.verificationPending} />
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap">
                             <StatusCell date={v.tahograf} />

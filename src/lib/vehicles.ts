@@ -21,6 +21,9 @@ export type Vehicle = {
   rovinieta: string | null;
   tahograf?: string | null;
   docs?: VehicleDoc[];
+  /** Există o cerere de verificare încă necompletată pentru vehicul. Cât e
+   * true, RCA/ITP/Rovinietă sunt necunoscute, nu „în regulă". */
+  verificationPending?: boolean;
   deleted_at: string | null;
 };
 
@@ -51,7 +54,8 @@ type DriverCertRow = Database["public"]["Tables"]["driver_certs"]["Row"];
 export function mapVehicleRow(
   row: VehicleRow,
   docs: VehicleDocRow[],
-  space?: SubscribableSpace
+  space?: SubscribableSpace,
+  verificationPending = false
 ): Vehicle {
   const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
   const coreTypes = Object.values(CORE_DOC_TYPES);
@@ -75,6 +79,7 @@ export function mapVehicleRow(
     rovinieta: findDoc(CORE_DOC_TYPES.rovinieta),
     tahograf: findDoc(CORE_DOC_TYPES.tahograf),
     docs: extra,
+    verificationPending,
     deleted_at: row.deleted_at,
   };
 }
@@ -86,18 +91,6 @@ export function mapDriverRow(row: DriverRow, certs: DriverCertRow[]): Driver {
     phone: row.phone,
     deleted_at: row.deleted_at,
     certs: certs.map((c) => ({ id: c.id, type: c.type, expires: c.expires_at })),
-  };
-}
-
-/** Datele plauzibile atribuite la crearea unui vehicul, simulând verificarea
- * automată în bazele oficiale (vezi CLAUDE.md — "Nu introduci nicio dată manual"). */
-export function plausibleDocDates() {
-  const inDays = (n: number) =>
-    new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
-  return {
-    [CORE_DOC_TYPES.itp]: inDays(280),
-    [CORE_DOC_TYPES.rca]: inDays(150),
-    [CORE_DOC_TYPES.rovinieta]: inDays(210),
   };
 }
 

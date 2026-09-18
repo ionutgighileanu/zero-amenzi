@@ -494,3 +494,43 @@ documentele lor — atunci se adaugă explicit `vehicles_update_admin`, nu se
 lărgește policy-ul de select. Sau dacă rolul de admin depășește un singur
 email hardcodat (acum duplicat în trei locuri: ADMIN_EMAIL plus două migrații),
 moment în care merită o coloană de rol pe users și un helper SECURITY DEFINER.
+
+## D-023 · 2026-09 · Vehiculele din garaj trec prin fluxul de verificare
+
+Context: La adăugarea unui vehicul, `addVehicleAction` insera trei documente
+cu date inventate din offset-uri fixe (ITP +280 zile, RCA +150, Rovinietă
++210) și le afișa ca fapt: buline verzi, „Toate documentele sunt în regulă".
+Nimeni nu verifica nimic, nimeni nu era anunțat. Un utilizator real ar fi
+plecat convins că RCA-ul îi e valabil până în februarie — exact afirmația
+falsă despre un act legal pe care produsul promite s-o prevină. Descoperit
+când un test cu o plăcuță fictivă n-a produs niciun email de verificare.
+
+Decizie: Nu se mai inventează nicio dată. Adăugarea unui vehicul creează o
+`verification_request` legată prin `vehicle_id`, cu emailul contului atașat.
+Cererea intră în digestul adminului ca oricare alta; la completare, rezultatul
+se scrie în `vehicle_docs` (service_role, upsert pe tip), utilizatorul primește
+email + notificare in-app cu link direct la garaj/flotă. Până atunci cardul
+arată „În verificare" pe fiecare document, nu liniuță și nu verde.
+
+Reutilizează tot ce exista deja din D-010/D-011 — același tabel, același
+digest, același panou admin, aceeași acțiune de completare. Singura piesă
+nouă e legătura cerere → vehicul și policy-ul care lasă membrii spațiului să
+vadă starea ei.
+
+Detalii care nu sunt evidente:
+- Policy-ul de INSERT cere `is_space_admin` pe vehiculul legat. Fără asta,
+  oricine ar putea atașa o cerere vehiculului altcuiva și, la completare, i-ar
+  suprascrie documentele.
+- Policy-ul nou de SELECT e scoped pe `vehicle_id` + membru al spațiului.
+  Nu deschide listarea cererilor publice (fără cont), care rămâne admin-only.
+- `nu_gasit` sau lipsa datei nu produc niciun document — rămâne liniuță.
+  O liniuță e onestă; o dată inventată e exact ce eliminăm.
+- Limita de plăcuță pe cereri a crescut de la 15 la 32: flotele B2B au
+  camioane cu numere străine, iar cererea lor ar fi picat pe constrângere.
+- Dacă inserarea cererii eșuează, vehiculul rămâne și cardul arată liniuțe,
+  nu „în verificare" — ca să nu promită ceva ce nu s-a înregistrat.
+
+Aș reveni dacă: Apar integrările automate cu RAR/ASF/CNAIR (D-010). Atunci
+completarea cererii o face un job, nu adminul, dar cardul, notificarea și
+scrierea în `vehicle_docs` rămân identice — fluxul e deja agnostic la cine
+completează.

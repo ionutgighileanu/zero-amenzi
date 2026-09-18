@@ -1,8 +1,8 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { plausibleDocDates } from "@/lib/vehicles";
 import { fetchSpace, spacePath } from "@/lib/spaces";
 import { canAddVehicle } from "@/lib/subscription";
 import {
@@ -70,22 +70,35 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
   }
   if (!vehicle) throw new Error("Nu am putut adăuga vehiculul.");
 
-  // Simulăm verificarea automată în bazele oficiale: ITP/RCA/Rovinietă
-  // primesc date plauzibile — vezi CLAUDE.md, „nu introduci nicio dată manual".
-  const docs = Object.entries(plausibleDocDates()).map(([type, expiresAt]) => ({
+  // Documentele NU se inventează. Vehiculul intră în fluxul de verificare
+  // (D-023): cererea ajunge în digestul adminului, iar datele reale se scriu
+  // în vehicle_docs la completare — vezi completeVerificationAction. Până
+  // atunci cardul arată „în verificare", nu buline verzi.
+  //
+  // id/token generate aici, nu citite înapoi: policy-ul de SELECT pe cereri
+  // acoperă doar vehiculele spațiului, dar un `.insert().select()` ar fi o
+  // a doua rundă degeaba pentru un rând pe care nu-l folosim imediat.
+  const { data: auth } = await supabase.auth.getUser();
+  const { error: requestError } = await supabase.from("verification_requests").insert({
+    id: randomUUID(),
+    token: randomUUID(),
+    plate_number: vehicle.plate,
+    // Emailul contului: utilizatorul a adăugat mașina și se așteaptă să
+    // primească rezultatul, nu doar să-l găsească în clopoțel.
+    email: auth.user?.email ?? null,
+    user_id: auth.user?.id ?? null,
     vehicle_id: vehicle.id,
-    type,
-    expires_at: expiresAt,
-  }));
-  const { data: docRows, error: docsError } = await supabase
-    .from("vehicle_docs")
-    .insert(docs)
-    .select();
+  });
 
-  if (docsError) throw new Error("Vehiculul a fost creat, dar documentele nu s-au putut genera.");
+  // Vehiculul există deja; un eșec aici nu-l anulează. Cardul rămâne cu
+  // liniuțe (necunoscut), nu cu „în verificare" — ca să nu promită ceva ce nu
+  // s-a înregistrat.
+  if (requestError) {
+    console.error("Vehicul creat, dar cererea de verificare a eșuat:", requestError);
+  }
 
   revalidatePath(spacePath(space));
-  return { vehicle, docs: docRows ?? [] };
+  return { vehicle, verificationPending: !requestError };
 }
 
 export async function softDeleteVehicleAction(id: string, spaceId: string) {

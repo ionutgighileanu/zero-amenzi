@@ -48,7 +48,7 @@ export function FleetVehicleCard({ vehicle: v, onOpen, onRca }: FleetVehicleCard
         {docs.map(([label, date]) => (
           <div key={label} className="flex justify-between items-center">
             <span className="text-sm text-slate-500">{label}</span>
-            <StatusCell date={date} />
+            <StatusCell date={date} pending={v.verificationPending} />
           </div>
         ))}
       </div>

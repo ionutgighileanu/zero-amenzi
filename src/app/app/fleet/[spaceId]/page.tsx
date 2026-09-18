@@ -44,8 +44,22 @@ export default async function FleetPage({ params }: { params: Promise<{ spaceId:
   const { data: docRows } = vehicleIds.length
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
     : { data: [] };
+  const { data: pendingRows } = vehicleIds.length
+    ? await supabase
+        .from("verification_requests")
+        .select("vehicle_id")
+        .in("vehicle_id", vehicleIds)
+        .eq("status", "pending")
+    : { data: [] };
+  const pendingIds = new Set((pendingRows ?? []).map((r) => r.vehicle_id));
+
   const vehicles = (vehicleRows ?? []).map((row) =>
-    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id), space)
+    mapVehicleRow(
+      row,
+      (docRows ?? []).filter((d) => d.vehicle_id === row.id),
+      space,
+      pendingIds.has(row.id)
+    )
   );
 
   const { data: driverRows } = await supabase

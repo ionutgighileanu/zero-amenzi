@@ -310,6 +310,7 @@ export type Database = {
           token: string;
           user_id: string | null;
           admin_notified_at: string | null;
+          vehicle_id: string | null;
         };
         Insert: {
           id?: string;
@@ -327,6 +328,7 @@ export type Database = {
           token?: string;
           user_id?: string | null;
           admin_notified_at?: string | null;
+          vehicle_id?: string | null;
         };
         Update: {
           id?: string;
@@ -344,6 +346,7 @@ export type Database = {
           token?: string;
           user_id?: string | null;
           admin_notified_at?: string | null;
+          vehicle_id?: string | null;
         };
         Relationships: [];
       };

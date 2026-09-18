@@ -3,9 +3,13 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendVerificationResultEmail } from "@/lib/email/send-verification-result";
 import { createVerificationNotification } from "@/lib/verificationNotification";
+import { fetchSpace, spacePath } from "@/lib/spaces";
+import { CORE_DOC_TYPES } from "@/lib/vehicles";
 import { ADMIN_EMAIL, type VerificationResultValue } from "@/lib/constants";
+import type { Database } from "@/lib/supabase/database.types";
 import {
   attachVerificationEmailSchema,
   completeVerificationSchema,
@@ -166,13 +170,69 @@ export async function completeVerificationAction(id: string, results: CompleteVe
     });
   }
 
+  // Cerere venită din garaj/flotă: rezultatul devine documentele vehiculului,
+  // iar notificarea duce la card, nu la pagina publică de status.
+  const vehicleHref = updated.vehicle_id ? await syncVehicleDocs(updated) : null;
+
   // Notificare in-app — doar dacă cererea e legată de un cont. Independentă
   // de email: o cerere poate avea cont fără email atașat și invers.
   if (updated.user_id) {
-    await createVerificationNotification(updated);
+    await createVerificationNotification(updated, vehicleHref ?? undefined);
   }
 
   revalidatePath("/admin/verifications");
   revalidatePath(`/verificare/status/${updated.id}`);
   revalidatePath("/app", "layout");
+}
+
+type VerificationRow = Database["public"]["Tables"]["verification_requests"]["Row"];
+
+/**
+ * Scrie rezultatul verificării în vehicle_docs pentru vehiculul legat și
+ * întoarce calea spațiului lui, pentru linkul din notificare.
+ *
+ * service_role, nu clientul adminului: policy-urile admin pe vehicle_docs
+ * acoperă SELECT/INSERT/UPDATE, dar o re-verificare trebuie să înlocuiască
+ * un document existent de același tip, iar acțiunea e deja gate-uită de
+ * ADMIN_EMAIL mai sus. „nu_gasit" sau lipsa datei nu produc niciun document —
+ * o liniuță e mai onestă decât o dată inventată.
+ */
+async function syncVehicleDocs(request: VerificationRow): Promise<string | null> {
+  if (!request.vehicle_id) return null;
+  const admin = createAdminClient();
+
+  const results: Array<[string, VerificationRow["result_itp"], string | null]> = [
+    [CORE_DOC_TYPES.itp, request.result_itp, request.result_itp_expires],
+    [CORE_DOC_TYPES.rca, request.result_rca, request.result_rca_expires],
+    [CORE_DOC_TYPES.rovinieta, request.result_rovinieta, request.result_rovinieta_expires],
+  ];
+
+  for (const [type, result, expiresAt] of results) {
+    if (!expiresAt || result === "nu_gasit") continue;
+
+    const { data: existing } = await admin
+      .from("vehicle_docs")
+      .select("id")
+      .eq("vehicle_id", request.vehicle_id)
+      .eq("type", type)
+      .maybeSingle();
+
+    const { error } = existing
+      ? await admin.from("vehicle_docs").update({ expires_at: expiresAt }).eq("id", existing.id)
+      : await admin
+          .from("vehicle_docs")
+          .insert({ vehicle_id: request.vehicle_id, type, expires_at: expiresAt });
+
+    if (error) console.error(`Nu am putut scrie ${type} pe vehiculul ${request.vehicle_id}:`, error);
+  }
+
+  const { data: vehicle } = await admin
+    .from("vehicles")
+    .select("space_id")
+    .eq("id", request.vehicle_id)
+    .maybeSingle();
+  if (!vehicle) return null;
+
+  const space = await fetchSpace(admin, vehicle.space_id);
+  return space ? spacePath(space) : null;
 }

@@ -24,7 +24,10 @@ export function buildVerificationNotificationBody(request: VerificationRow): str
  * verification_request_id face a doua încercare inofensivă (dublu-click pe
  * „Completează", retry) — tratăm coliziunea drept succes, nu eroare.
  */
-export async function createVerificationNotification(request: VerificationRow): Promise<boolean> {
+export async function createVerificationNotification(
+  request: VerificationRow,
+  href = `/verificare/status/${request.id}`
+): Promise<boolean> {
   if (!request.user_id) return false;
 
   const supabase = createAdminClient();
@@ -34,7 +37,7 @@ export async function createVerificationNotification(request: VerificationRow): 
     verification_request_id: request.id,
     title: `Verificare finalizată — ${request.plate_number}`,
     body: buildVerificationNotificationBody(request),
-    href: `/verificare/status/${request.id}`,
+    href,
   });
 
   if (error) {

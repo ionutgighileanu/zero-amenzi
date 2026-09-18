@@ -7,16 +7,17 @@ import { StatusCell } from "@/components/app/StatusCell";
 type DocLineProps = {
   label: string;
   date: string | null | undefined;
+  pending?: boolean;
   onDelete?: () => void;
   action?: ReactNode;
 };
 
-export function DocLine({ label, date, onDelete, action }: DocLineProps) {
+export function DocLine({ label, date, pending, onDelete, action }: DocLineProps) {
   return (
     <div className="flex items-center justify-between gap-2 py-2.5 border-b border-slate-100 last:border-0">
       <span className="text-sm text-slate-600">{label}</span>
       <div className="flex items-center gap-1.5">
-        <StatusCell date={date} />
+        <StatusCell date={date} pending={pending} />
         {action}
         {onDelete && (
           <button

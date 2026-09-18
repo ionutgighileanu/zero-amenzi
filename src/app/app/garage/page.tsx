@@ -35,10 +35,26 @@ export default async function GaragePage() {
     ? await supabase.from("vehicle_docs").select("*").in("vehicle_id", vehicleIds)
     : { data: [] };
 
+  // Vehiculele cu cerere de verificare încă necompletată — cardul lor arată
+  // „în verificare" în loc de liniuțe (D-023).
+  const { data: pendingRows } = vehicleIds.length
+    ? await supabase
+        .from("verification_requests")
+        .select("vehicle_id")
+        .in("vehicle_id", vehicleIds)
+        .eq("status", "pending")
+    : { data: [] };
+  const pendingIds = new Set((pendingRows ?? []).map((r) => r.vehicle_id));
+
   // Spațiul se pasează la mapare ca fiecare vehicul să-și cunoască starea de
   // acces (trial / paid / locked) — vezi src/lib/subscription.ts.
   const vehicles = (vehicleRows ?? []).map((row) =>
-    mapVehicleRow(row, (docRows ?? []).filter((d) => d.vehicle_id === row.id), space)
+    mapVehicleRow(
+      row,
+      (docRows ?? []).filter((d) => d.vehicle_id === row.id),
+      space,
+      pendingIds.has(row.id)
+    )
   );
 
   const { data: alertRows } = await supabase

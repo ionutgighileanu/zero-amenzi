@@ -67,12 +67,12 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
+  const pendingCount = vehicles.filter((v) => v.verificationPending).length;
   const detailVehicle = detailId ? vehicles.find((v) => v.id === detailId) : null;
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, docs } = await addVehicleAction(space.id, plate, vin);
-      const findDoc = (type: string) => docs.find((d) => d.type === type)?.expires_at ?? null;
+      const { vehicle, verificationPending } = await addVehicleAction(space.id, plate, vin);
       setVehicles((list) => [
         {
           id: vehicle.id,
@@ -82,11 +82,12 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
           paidUntil: vehicle.paid_until,
           access: vehicleAccess(space, vehicle.paid_until),
           truck: vehicle.is_truck,
-          itp: findDoc("ITP"),
-          rca: findDoc("RCA"),
-          rovinieta: findDoc("Rovinietă"),
+          itp: null,
+          rca: null,
+          rovinieta: null,
           tahograf: null,
           docs: [],
+          verificationPending,
           deleted_at: null,
         },
         ...list,
@@ -143,9 +144,11 @@ export function GarageBoard({ space, initialVehicles, initialAlertTypes }: Garag
             Mașinile mele
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {problemCount === 0
-              ? "Toate documentele sunt în regulă."
-              : `${problemCount} ${problemCount === 1 ? "vehicul cere" : "vehicule cer"} atenție. Restul e în regulă.`}
+            {problemCount > 0
+              ? `${problemCount} ${problemCount === 1 ? "vehicul cere" : "vehicule cer"} atenție. Restul e în regulă.`
+              : pendingCount > 0
+                ? `${pendingCount} ${pendingCount === 1 ? "vehicul în verificare" : "vehicule în verificare"}. Te anunțăm când actele sunt confirmate.`
+                : "Toate documentele sunt în regulă."}
           </p>
         </div>
         <div className="flex items-center gap-2">

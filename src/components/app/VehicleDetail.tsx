@@ -60,14 +60,15 @@ export function VehicleDetail({
           <DocLine
             label="RCA"
             date={vehicle.rca}
+            pending={vehicle.verificationPending}
             action={
               <Button size="sm" variant="ghost" onClick={() => onRca(vehicle)}>
                 Reînnoiește
               </Button>
             }
           />
-          <DocLine label="ITP" date={vehicle.itp} />
-          <DocLine label="Rovinietă" date={vehicle.rovinieta} />
+          <DocLine label="ITP" date={vehicle.itp} pending={vehicle.verificationPending} />
+          <DocLine label="Rovinietă" date={vehicle.rovinieta} pending={vehicle.verificationPending} />
           {isB2B && vehicle.truck && <DocLine label="Tahograf" date={vehicle.tahograf} />}
         </section>
 

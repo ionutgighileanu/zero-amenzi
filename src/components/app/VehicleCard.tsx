@@ -86,9 +86,14 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco, onUpgrade }: V
                 className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0"
               >
                 <span className="text-sm text-slate-500">{label}</span>
-                <StatusCell date={date} />
+                <StatusCell date={date} pending={v.verificationPending} />
               </div>
             ))}
+            {v.verificationPending && (
+              <p className="text-xs text-slate-500 py-2.5">
+                Verificăm actele în bazele oficiale. Te anunțăm când sunt confirmate.
+              </p>
+            )}
             {(v.docs ?? []).length > 0 && (
               <div className="flex justify-between items-center py-2.5">
                 <span className="text-sm text-slate-500">Alte documente</span>

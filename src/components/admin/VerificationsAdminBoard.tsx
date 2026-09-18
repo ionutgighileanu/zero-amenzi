@@ -74,7 +74,17 @@ export function VerificationsAdminBoard({
                 className="hover:bg-slate-50/60 transition-colors cursor-pointer"
               >
                 <td className="px-4 py-3.5 whitespace-nowrap">
-                  <Plate plate={r.plate_number} size="sm" />
+                  <span className="inline-flex items-center gap-2">
+                    <Plate plate={r.plate_number} size="sm" />
+                    {r.vehicle_id && (
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-wide text-brand bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5"
+                        title="Rezultatul se scrie direct pe vehiculul din contul utilizatorului"
+                      >
+                        Din garaj
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="px-4 py-3.5 whitespace-nowrap text-sm text-slate-500">
                   {r.email ?? "—"}

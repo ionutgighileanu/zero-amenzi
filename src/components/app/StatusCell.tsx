@@ -6,9 +6,20 @@ import { daysUntil, formatDate, getStatus } from "@/lib/status";
  * warning → pastilă amber cu nr. de zile
  * expired → pastilă roșie solidă
  */
-export function StatusCell({ date }: { date: string | null | undefined }) {
+export function StatusCell({ date, pending }: { date: string | null | undefined; pending?: boolean }) {
   const status = getStatus(date);
   const d = daysUntil(date);
+
+  // Verificarea încă nu s-a făcut: nici verde, nici liniuță. O liniuță ar
+  // citi ca „nu are document", iar verdele ca „e în regulă" — niciuna nu e
+  // adevărată încă.
+  if (pending && status === "none")
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-2.5 py-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" aria-hidden />
+        În verificare
+      </span>
+    );
 
   if (status === "none") return <span className="text-slate-500 text-sm">—</span>;
 
