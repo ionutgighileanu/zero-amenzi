@@ -4,9 +4,14 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ChevronRight, Search } from "lucide-react";
 import { formatDate, formatDateTime } from "@/lib/status";
+import { StatusCell } from "@/components/app/StatusCell";
+import { CORE_DOC_TYPES } from "@/lib/vehicles";
 import type { AdminUserRow } from "@/lib/admin/users";
 
-type SortKey = "createdAt" | "lastSignInAt" | "vehicles" | "requests";
+/** Cele trei acte obligatorii, în ordinea din tabel. */
+const CORE_TYPES = [CORE_DOC_TYPES.rca, CORE_DOC_TYPES.itp, CORE_DOC_TYPES.rovinieta];
+
+type SortKey = "createdAt" | "lastSignInAt" | "vehicles" | "requests" | "urgency";
 
 const HEADERS: { key: SortKey | null; label: string }[] = [
   { key: null, label: "Utilizator" },
@@ -15,6 +20,7 @@ const HEADERS: { key: SortKey | null; label: string }[] = [
   { key: null, label: "Spații" },
   { key: "vehicles", label: "Vehicule" },
   { key: "requests", label: "Cereri" },
+  { key: "urgency", label: "RCA / ITP / Rovinietă" },
   { key: null, label: "Alerte" },
 ];
 
@@ -23,6 +29,8 @@ const SORTERS: Record<SortKey, (u: AdminUserRow) => string | number> = {
   lastSignInAt: (u) => u.lastSignInAt ?? "",
   vehicles: (u) => u.vehiclesActive,
   requests: (u) => u.requestsTotal,
+  // Cel mai urgent primul: inversăm semnul, fiindcă sortarea e descrescătoare.
+  urgency: (u) => (u.soonestDoc ? -u.soonestDoc.days : -Infinity),
 };
 
 export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
@@ -139,6 +147,33 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
                     </span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  {u.vehiclesActive === 0 ? (
+                    <span className="text-sm text-slate-400">—</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {CORE_TYPES.map((type) => {
+                        const doc = u.docsByType[type];
+                        return (
+                          <span
+                            key={type}
+                            className="inline-flex items-center gap-1 whitespace-nowrap"
+                            title={doc ? `${type} · ${doc.plate}` : `${type}: nicio dată`}
+                          >
+                            <span className="text-[10px] font-bold uppercase text-slate-400">
+                              {type === CORE_DOC_TYPES.rovinieta ? "ROV" : type}
+                            </span>
+                            {doc ? (
+                              <StatusCell date={doc.expiresAt} />
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                   email {u.emailNotifications ? "da" : "nu"} · push {u.pushDevices}
                   {u.notificationsUnread > 0 && ` · ${u.notificationsUnread} necitite`}
@@ -156,7 +191,7 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">
                   Niciun utilizator pentru „{query}”.
                 </td>
               </tr>

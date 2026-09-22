@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vehicleAccess, type SubscriptionStatus } from "@/lib/subscription";
+import { daysUntil } from "@/lib/status";
+import { CORE_DOC_TYPES } from "@/lib/vehicles";
 
 /**
  * Datele pentru panoul de admin, citite cu service_role: ocolesc RLS, deci
@@ -34,6 +36,15 @@ export type AdminVehicle = {
   createdAt: string;
 };
 
+/** Cel mai urgent dintre cele trei acte obligatorii, pe toate vehiculele
+ * utilizatorului: ce expiră primul și pe ce mașină. */
+export type AdminSoonestDoc = {
+  type: string;
+  expiresAt: string;
+  plate: string;
+  days: number;
+};
+
 export type AdminUserRow = {
   id: string;
   email: string;
@@ -52,6 +63,9 @@ export type AdminUserRow = {
   requestsPending: number;
   pushDevices: number;
   notificationsUnread: number;
+  /** Per tip de act (RCA, ITP, Rovinietă): cel mai apropiat de expirare. */
+  docsByType: Record<string, AdminSoonestDoc | undefined>;
+  soonestDoc: AdminSoonestDoc | null;
 };
 
 export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
@@ -63,11 +77,15 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
       admin.from("users").select("id, email, email_notifications"),
       admin.from("spaces").select("id, kind, name, owner_id, subscription_status, trial_ends_at"),
       admin.from("memberships").select("user_id, space_id, role"),
-      admin.from("vehicles").select("id, space_id, paid_until, deleted_at"),
+      admin.from("vehicles").select("id, space_id, plate, paid_until, deleted_at"),
       admin.from("verification_requests").select("user_id, status"),
       admin.from("push_subscriptions").select("user_id"),
       admin.from("notifications").select("user_id, read_at"),
     ]);
+
+  const { data: docRows } = await admin
+    .from("vehicle_docs")
+    .select("vehicle_id, type, expires_at");
 
   const spaceById = new Map((spaces.data ?? []).map((s) => [s.id, s]));
   const profileById = new Map((profiles.data ?? []).map((p) => [p.id, p]));
@@ -97,6 +115,26 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
       const now = new Date();
       const myRequests = (requests.data ?? []).filter((r) => r.user_id === authUser.id);
 
+      // Actele celor trei tipuri obligatorii, pe vehiculele active. Vehiculele
+      // șterse ies din calcul: nu mai expiră nimic pentru ele.
+      const plateByVehicle = new Map(myVehicles.filter((v) => !v.deleted_at).map((v) => [v.id, v.plate]));
+      const coreTypes: string[] = [CORE_DOC_TYPES.rca, CORE_DOC_TYPES.itp, CORE_DOC_TYPES.rovinieta];
+      const docsByType: Record<string, AdminSoonestDoc | undefined> = {};
+      for (const doc of docRows ?? []) {
+        const plate = plateByVehicle.get(doc.vehicle_id);
+        if (!plate || !coreTypes.includes(doc.type)) continue;
+        const days = daysUntil(doc.expires_at);
+        if (days === null) continue;
+        const current = docsByType[doc.type];
+        if (!current || days < current.days) {
+          docsByType[doc.type] = { type: doc.type, expiresAt: doc.expires_at, plate, days };
+        }
+      }
+      const soonestDoc = coreTypes
+        .map((t) => docsByType[t])
+        .filter((d): d is AdminSoonestDoc => d !== undefined)
+        .sort((a, b) => a.days - b.days)[0] ?? null;
+
       return {
         id: authUser.id,
         email: authUser.email ?? profile?.email ?? "—",
@@ -116,6 +154,8 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
         notificationsUnread: (notifications.data ?? []).filter(
           (n) => n.user_id === authUser.id && !n.read_at
         ).length,
+        docsByType,
+        soonestDoc,
       } satisfies AdminUserRow;
     })
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
