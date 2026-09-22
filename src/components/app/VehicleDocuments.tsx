@@ -1,7 +1,7 @@
 "use client";
 
 import { MouseEvent, ReactNode } from "react";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, Plus, X } from "lucide-react";
 import { StatusCell } from "@/components/app/StatusCell";
 import { getStatus } from "@/lib/status";
 import { CORE_DOC_TYPES, type Vehicle } from "@/lib/vehicles";
@@ -12,7 +12,7 @@ type VehicleDocumentsProps = {
   /** Doar în modal: ștergerea unei alerte suplimentare. Pe card lipsește —
    * acolo lista e doar de citit, iar click-ul deschide modalul. */
   onDeleteExtra?: (docId: string) => void;
-  /** Doar în modal: butonul „Adaugă" din dreptul titlului de secțiune. */
+  /** Butonul „Adaugă" din dreptul titlului de secțiune (AddAlertButton). */
   addControl?: ReactNode;
   /** Doar în modal: formularul de adăugare, sub lista de alerte. */
   children?: ReactNode;
@@ -25,6 +25,21 @@ const LINK =
 /** Cardul întreg e clickabil (deschide modalul): acțiunile din rânduri nu
  * trebuie să declanșeze și deschiderea. */
 const stop = (e: MouseEvent) => e.stopPropagation();
+
+/** Butonul „Adaugă" al alertelor suplimentare — același pe card și în modal. */
+export function AddAlertButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        stop(e);
+        onClick();
+      }}
+      className="inline-flex items-center gap-1 text-sm font-semibold text-brand rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+    >
+      <Plus size={14} aria-hidden /> Adaugă
+    </button>
+  );
+}
 
 function Row({
   label,

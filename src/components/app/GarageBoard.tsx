@@ -76,6 +76,11 @@ export function GarageBoard({
     setNotice(result.message);
   };
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailStartsAdding, setDetailStartsAdding] = useState(false);
+  const openDetail = (id: string, addAlert = false) => {
+    setDetailStartsAdding(addAlert);
+    setDetailId(id);
+  };
 
   const addBlocked = canAddVehicle(space, unpaidCount);
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
@@ -186,7 +191,8 @@ export function GarageBoard({
             <VehicleCard
               key={v.id}
               vehicle={v}
-              onOpen={(veh) => setDetailId(veh.id)}
+              onOpen={(veh) => openDetail(veh.id)}
+              onAddAlert={(veh) => openDetail(veh.id, true)}
               onRca={setRcaVehicle}
               onCasco={setCascoVehicle}
               onUpgrade={requestUpgrade}
@@ -224,6 +230,7 @@ export function GarageBoard({
           onDeleteDoc={deleteDoc}
           onDelete={softDelete}
           onClose={() => setDetailId(null)}
+          startAdding={detailStartsAdding}
         />
       )}
       {rcaVehicle && <RcaModal vehicle={rcaVehicle} onClose={() => setRcaVehicle(null)} />}

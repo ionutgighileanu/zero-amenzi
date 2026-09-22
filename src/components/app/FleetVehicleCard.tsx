@@ -4,7 +4,7 @@ import { MouseEvent } from "react";
 import { ChevronRight, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
-import { VehicleDocuments } from "@/components/app/VehicleDocuments";
+import { AddAlertButton, VehicleDocuments } from "@/components/app/VehicleDocuments";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
 
@@ -12,10 +12,12 @@ type FleetVehicleCardProps = {
   vehicle: Vehicle;
   onOpen: (v: Vehicle) => void;
   onRca: (v: Vehicle) => void;
+  /** „Adaugă" la alerte suplimentare: deschide modalul cu formularul gata deschis. */
+  onAddAlert: (v: Vehicle) => void;
 };
 
 /** Card stivuit pentru tabelul de flotă sub 768px (decizie D-009). */
-export function FleetVehicleCard({ vehicle: v, onOpen, onRca }: FleetVehicleCardProps) {
+export function FleetVehicleCard({ vehicle: v, onOpen, onRca, onAddAlert }: FleetVehicleCardProps) {
   const vStatus = vehicleStatus(v);
   const rcaStatus = getStatus(v.rca);
 
@@ -37,7 +39,11 @@ export function FleetVehicleCard({ vehicle: v, onOpen, onRca }: FleetVehicleCard
         <ChevronRight size={16} className="text-slate-300 shrink-0 mt-1.5" />
       </div>
 
-      <VehicleDocuments vehicle={v} onRca={onRca} />
+      <VehicleDocuments
+            vehicle={v}
+            onRca={onRca}
+            addControl={<AddAlertButton onClick={() => onAddAlert(v)} />}
+          />
 
       {rcaStatus !== "valid" && (
         <div className="mt-3 pt-3 border-t border-slate-100">

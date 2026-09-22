@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Shield, Truck } from "lucide-react";
+import { Shield, Truck } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
 import { AddDocForm } from "@/components/app/AddDocForm";
 import { DeleteConfirm } from "@/components/app/DeleteConfirm";
-import { VehicleDocuments } from "@/components/app/VehicleDocuments";
+import { AddAlertButton, VehicleDocuments } from "@/components/app/VehicleDocuments";
 import type { Vehicle, VehicleDoc } from "@/lib/vehicles";
 
 type VehicleDetailProps = {
@@ -20,6 +20,9 @@ type VehicleDetailProps = {
   onDeleteDoc: (id: string, docId: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
+  /** Pornește cu formularul de alertă deschis — când omul a apăsat
+   * „Adaugă" pe card, nu trebuie să-l mai caute o dată în modal. */
+  startAdding?: boolean;
 };
 
 /**
@@ -36,8 +39,9 @@ export function VehicleDetail({
   onDeleteDoc,
   onDelete,
   onClose,
+  startAdding = false,
 }: VehicleDetailProps) {
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(startAdding);
   const presets = [...new Set([...alertTypes, "Altul"])];
 
   const header = (
@@ -55,14 +59,7 @@ export function VehicleDetail({
     </div>
   );
 
-  const addControl = adding ? null : (
-    <button
-      onClick={() => setAdding(true)}
-      className="inline-flex items-center gap-1 text-sm font-semibold text-brand rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-    >
-      <Plus size={14} aria-hidden /> Adaugă
-    </button>
-  );
+  const addControl = adding ? null : <AddAlertButton onClick={() => setAdding(true)} />;
 
   return (
     <Modal onClose={onClose} title={`Detalii vehicul ${vehicle.plate}`} header={header} flush>

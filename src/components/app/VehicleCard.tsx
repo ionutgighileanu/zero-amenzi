@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
-import { VehicleDocuments } from "@/components/app/VehicleDocuments";
+import { AddAlertButton, VehicleDocuments } from "@/components/app/VehicleDocuments";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
 import { VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
@@ -15,11 +15,20 @@ type VehicleCardProps = {
   vehicle: Vehicle;
   onOpen: (v: Vehicle) => void;
   onRca: (v: Vehicle) => void;
+  /** „Adaugă" la alerte suplimentare: deschide modalul cu formularul gata deschis. */
+  onAddAlert: (v: Vehicle) => void;
   onCasco: (v: Vehicle) => void;
   onUpgrade: (v: Vehicle) => void;
 };
 
-export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco, onUpgrade }: VehicleCardProps) {
+export function VehicleCard({
+  vehicle: v,
+  onOpen,
+  onRca,
+  onAddAlert,
+  onCasco,
+  onUpgrade,
+}: VehicleCardProps) {
   const vStatus = vehicleStatus(v);
   const rcaStatus = getStatus(v.rca);
 
@@ -73,7 +82,11 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco, onUpgrade }: V
             </p>
           </div>
         ) : (
-          <VehicleDocuments vehicle={v} onRca={onRca} />
+          <VehicleDocuments
+            vehicle={v}
+            onRca={onRca}
+            addControl={<AddAlertButton onClick={() => onAddAlert(v)} />}
+          />
         )}
       </div>
 

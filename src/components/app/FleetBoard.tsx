@@ -146,6 +146,11 @@ export function FleetBoard({
   const [rcaVehicle, setRcaVehicle] = useState<Vehicle | null>(null);
   const [cascoVehicle, setCascoVehicle] = useState<Vehicle | null>(null);
   const [detailVehicleId, setDetailVehicleId] = useState<string | null>(null);
+  const [detailStartsAdding, setDetailStartsAdding] = useState(false);
+  const openVehicle = (id: string, addAlert = false) => {
+    setDetailStartsAdding(addAlert);
+    setDetailVehicleId(id);
+  };
   const [detailDriverId, setDetailDriverId] = useState<string | null>(null);
 
   const counts = useMemo(
@@ -431,7 +436,8 @@ export function FleetBoard({
                     >
                       <FleetVehicleCard
                         vehicle={v}
-                        onOpen={(veh) => setDetailVehicleId(veh.id)}
+                        onOpen={(veh) => openVehicle(veh.id)}
+                        onAddAlert={(veh) => openVehicle(veh.id, true)}
                         onRca={setRcaVehicle}
                       />
                     </motion.div>
@@ -469,7 +475,7 @@ export function FleetBoard({
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: DURATION.state, ease: "easeOut" }}
-                          onClick={() => setDetailVehicleId(v.id)}
+                          onClick={() => openVehicle(v.id)}
                           className="hover:bg-slate-50/60 transition-colors cursor-pointer"
                         >
                           <td className="px-4 py-3.5 whitespace-nowrap">
@@ -652,6 +658,7 @@ export function FleetBoard({
           onDeleteDoc={deleteVehicleDoc}
           onDelete={softDeleteVehicle}
           onClose={() => setDetailVehicleId(null)}
+          startAdding={detailStartsAdding}
         />
       )}
       {detailDriver && (
