@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vehicleAccess, type SubscriptionStatus } from "@/lib/subscription";
 import { daysUntil } from "@/lib/status";
+import { compactSearch, normalizeSearch } from "@/lib/searchText";
 import { CORE_DOC_TYPES } from "@/lib/vehicles";
 
 /**
@@ -19,6 +20,7 @@ export type AdminSpace = {
   kind: "personal" | "fleet";
   name: string;
   role: "owner" | "admin" | "member";
+  cui: string | null;
   isOwner: boolean;
   subscriptionStatus: SubscriptionStatus;
   trialEndsAt: string;
@@ -65,6 +67,11 @@ export type AdminUserRow = {
   notificationsUnread: number;
   /** Per tip de act (RCA, ITP, Rovinietă): cel mai apropiat de expirare. */
   docsByType: Record<string, AdminSoonestDoc | undefined>;
+  /** Tot ce se poate căuta pentru contul ăsta: email, plăcuțe, VIN-uri,
+   * nume de flote, CUI. Precalculat, ca filtrarea din tabel să fie o simplă
+   * potrivire de text. */
+  searchText: string;
+  searchCompact: string;
 };
 
 export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
@@ -74,9 +81,9 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
     await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
       admin.from("users").select("id, email, email_notifications"),
-      admin.from("spaces").select("id, kind, name, owner_id, subscription_status, trial_ends_at"),
+      admin.from("spaces").select("id, kind, name, cui, owner_id, subscription_status, trial_ends_at"),
       admin.from("memberships").select("user_id, space_id, role"),
-      admin.from("vehicles").select("id, space_id, plate, paid_until, deleted_at"),
+      admin.from("vehicles").select("id, space_id, plate, vin, paid_until, deleted_at"),
       admin.from("verification_requests").select("user_id, status"),
       admin.from("push_subscriptions").select("user_id"),
       admin.from("notifications").select("user_id, read_at"),
@@ -102,6 +109,7 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
             kind: space.kind,
             name: space.name,
             role: m.role,
+            cui: space.cui,
             isOwner: space.owner_id === authUser.id,
             subscriptionStatus: space.subscription_status,
             trialEndsAt: space.trial_ends_at,
@@ -130,9 +138,16 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
         }
       }
 
+      const email = authUser.email ?? profile?.email ?? "—";
+      const searchParts = [
+        email,
+        ...myVehicles.flatMap((v) => [v.plate, v.vin]),
+        ...mySpaces.flatMap((s) => [s.name, s.cui ?? ""]),
+      ].filter(Boolean);
+
       return {
         id: authUser.id,
-        email: authUser.email ?? profile?.email ?? "—",
+        email,
         missingProfile: !profile,
         createdAt: authUser.created_at ?? null,
         lastSignInAt: authUser.last_sign_in_at ?? null,
@@ -150,6 +165,8 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
           (n) => n.user_id === authUser.id && !n.read_at
         ).length,
         docsByType,
+        searchText: normalizeSearch(searchParts.join(" ")),
+        searchCompact: compactSearch(searchParts.join(" ")),
       } satisfies AdminUserRow;
     })
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));

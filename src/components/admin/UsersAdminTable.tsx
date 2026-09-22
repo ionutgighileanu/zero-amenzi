@@ -6,6 +6,7 @@ import { AlertTriangle, ChevronRight, Search } from "lucide-react";
 import { formatDate, formatDateTime } from "@/lib/status";
 import { StatusCell } from "@/components/app/StatusCell";
 import { CORE_DOC_TYPES } from "@/lib/vehicles";
+import { compactSearch, normalizeSearch } from "@/lib/searchText";
 import type { AdminUserRow } from "@/lib/admin/users";
 
 /** Cele trei acte obligatorii, în ordinea din tabel. */
@@ -48,8 +49,16 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
   const [sort, setSort] = useState<SortKey>("createdAt");
 
   const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = q ? users.filter((u) => u.email.toLowerCase().includes(q)) : users;
+    // Două potriviri: una pe text (email, nume de flotă), una pe forma
+    // compactă (plăcuță, VIN, CUI), ca „b100abc" să găsească „B 100 ABC"
+    // și „12345678" să găsească „RO12345678".
+    const q = normalizeSearch(query.trim());
+    const qCompact = compactSearch(query);
+    const filtered = q
+      ? users.filter(
+          (u) => u.searchText.includes(q) || (qCompact.length > 0 && u.searchCompact.includes(qCompact))
+        )
+      : users;
     const key = SORTERS[sort];
     // Descrescător peste tot: cei mai noi și cei cu cele mai multe primii.
     return [...filtered].sort((a, b) => (key(a) < key(b) ? 1 : key(a) > key(b) ? -1 : 0));
@@ -73,9 +82,9 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Caută după email"
-            aria-label="Caută după email"
-            className="w-56 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+            placeholder="Email, număr, VIN, firmă, CUI"
+            aria-label="Caută după email, număr de înmatriculare, VIN, firmă sau CUI"
+            className="w-64 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
           />
         </label>
       </div>
