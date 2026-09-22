@@ -1,14 +1,15 @@
 "use client";
 
 import { MouseEvent, ReactNode, useState } from "react";
-import { AlertTriangle, ArrowRight, Bell, ChevronDown, Plus, Shield, Truck } from "lucide-react";
+import { ArrowRight, Bell, ChevronDown, Plus, Shield, Truck } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
 import { DocLine } from "@/components/app/DocLine";
+import { StatusCell } from "@/components/app/StatusCell";
 import { AddDocForm } from "@/components/app/AddDocForm";
 import { DeleteConfirm } from "@/components/app/DeleteConfirm";
-import { daysUntil, formatDayMonth, getStatus } from "@/lib/status";
+import { getStatus } from "@/lib/status";
 import { CORE_DOC_TYPES, type Vehicle, type VehicleDoc } from "@/lib/vehicles";
 
 type VehicleDetailProps = {
@@ -22,45 +23,6 @@ type VehicleDetailProps = {
   onDelete: (id: string) => void;
   onClose: () => void;
 };
-
-const PILL = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap";
-
-/** Eticheta de stare a unui document — aceleași praguri și culori ca în
- * restul aplicației (getStatus), ca fereastra să nu contrazică cardul. */
-function DocBadge({ date, pending }: { date: string | null | undefined; pending?: boolean }) {
-  const d = daysUntil(date);
-
-  if (d === null) {
-    return pending ? (
-      <span className={`${PILL} bg-slate-100 text-slate-600`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" aria-hidden />
-        În verificare
-      </span>
-    ) : (
-      <span className="text-sm text-slate-400">—</span>
-    );
-  }
-
-  if (d <= 0) {
-    return (
-      <span className={`${PILL} bg-red-50 text-red-700 border border-red-200`}>
-        <AlertTriangle size={12} aria-hidden />
-        {d === 0 ? "Expiră azi" : "Expirat"}
-      </span>
-    );
-  }
-
-  const zile = `${d} ${d === 1 ? "zi" : "zile"}`;
-  if (getStatus(date) === "warning") {
-    return (
-      <span className={`${PILL} bg-amber-50 text-amber-800 border border-amber-200`}>
-        {zile} · {formatDayMonth(date)}
-      </span>
-    );
-  }
-
-  return <span className={`${PILL} bg-emerald-50 text-emerald-700`}>{zile}</span>;
-}
 
 const LINK = "inline-flex items-center gap-0.5 text-xs font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded";
 
@@ -153,7 +115,7 @@ export function VehicleDetail({
               className="grid grid-cols-[1fr_auto_5.5rem] items-center gap-2 py-3"
             >
               <span className="text-sm font-semibold text-slate-800">{row.label}</span>
-              <DocBadge date={row.date} pending={vehicle.verificationPending} />
+              <StatusCell date={row.date} pending={vehicle.verificationPending} />
               <span className="text-right">{needsAction(row.date) ? row.action : null}</span>
             </li>
           ))}
