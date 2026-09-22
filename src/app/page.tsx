@@ -22,9 +22,12 @@ import { VerificationForm } from "@/components/VerificationForm";
 import { Nav } from "@/components/landing/Nav";
 import { Faq } from "@/components/landing/Faq";
 import { StickyMobileCta } from "@/components/landing/StickyMobileCta";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { ADMIN_EMAIL, SITE_URL } from "@/lib/constants";
+import { FAQ_ITEMS } from "@/lib/faq";
+import { JsonLd } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   description:
     "Verifică gratuit dacă ITP-ul, RCA-ul și rovinieta mașinii tale sunt valabile. Primești alerte pe email înainte de expirare, ca să nu iei amenzi.",
 };
@@ -73,9 +76,49 @@ const B2B_MOCK_ROWS: [string, [string, string], [string, string], [string, strin
   ["IF 05 CAR", ["expirat", "text-red-600 bg-red-50"], ["45 zile", "text-slate-500"], ["ok", "text-emerald-700"]],
 ];
 
+/**
+ * Datele structurate ale paginii principale.
+ *
+ * FAQPage poate face ca întrebările să apară direct în rezultatele Google,
+ * sub link. Condiția lor e ca răspunsurile să fie identice cu cele vizibile
+ * pe pagină — de aceea și lista, și schema citesc din FAQ_ITEMS.
+ */
+const HOME_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organizatie`,
+      name: "Zero Amenzi",
+      url: SITE_URL,
+      logo: `${SITE_URL}/apple-touch-icon.png`,
+      email: ADMIN_EMAIL,
+      areaServed: "RO",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#site`,
+      url: SITE_URL,
+      name: "Zero Amenzi",
+      inLanguage: "ro-RO",
+      publisher: { "@id": `${SITE_URL}/#organizatie` },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#intrebari`,
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <JsonLd data={HOME_SCHEMA} />
       <Nav />
 
       {/* HERO */}

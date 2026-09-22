@@ -4,6 +4,7 @@ import { Nav } from "@/components/landing/Nav";
 import { VerificationForm } from "@/components/VerificationForm";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/verificare" },
   title: "Verifică ITP, RCA și rovinieta — AutoDocs",
   description:
     "Introdu numărul de înmatriculare și afli în câteva secunde dacă ITP-ul, RCA-ul și rovinieta sunt valabile. Gratuit, fără cont și fără date personale.",

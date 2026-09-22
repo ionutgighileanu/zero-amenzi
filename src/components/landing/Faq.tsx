@@ -2,41 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-
-const FAQ_DATA: [string, string][] = [
-  [
-    "Ce este AutoDocs?",
-    "AutoDocs verifică automat dacă ITP-ul, RCA-ul și rovinieta mașinii tale sunt valabile și te notifică înainte de expirare, ca să nu mai iei amenzi. Funcționează și pentru persoane fizice, și pentru flote de companie.",
-  ],
-  [
-    "Cât costă?",
-    "Primul an e gratuit, cu acces complet: verificare ITP, RCA și rovinietă pentru mașinile tale. După aceea, Premium costă 12 lei/an per vehicul, fără limită de mașini — același preț pentru persoane fizice și pentru firme. Premium rămâne gratuit pentru fiecare RCA cumpărat prin platformă.",
-  ],
-  [
-    "Cum funcționează notificările?",
-    "Primești alerte cu 30 de zile, 15 zile, 2 zile și în ziua expirării — pe email (cont gratuit) sau email + SMS (cont PRO). Pe telefonul mobil, aplicația PWA trimite și notificări push gratuit.",
-  ],
-  [
-    "Ce riscuri am cu actele expirate?",
-    "ITP expirat: amendă 1.822–4.050 lei + reținerea plăcuțelor. RCA expirat: 1.000–2.000 lei + răspundere personală nelimitată. Rovinietă lipsă: 500–1.000 lei (amendă automată prin camerele CNAIR). O singură notificare te poate scuti de mii de lei.",
-  ],
-  [
-    "Pot monitoriza mai multe mașini?",
-    "Da. Cu planul PRO adaugi oricâte vehicule — ideal pentru familii sau firme. Fiecare vehicul are propriile alerte.",
-  ],
-  [
-    "Pot cumpăra RCA prin AutoDocs?",
-    "Da. Compari oferte de la mai mulți asigurători, alegi cea mai ieftină și închei polița online. Bonus: primești PRO gratuit 1 an la fiecare RCA cumpărat prin noi.",
-  ],
-  [
-    "Stocați documente personale?",
-    "Nu. Nu stocăm copii ale buletinului, permisului sau altor acte de identitate. Salvăm doar datele de expirare necesare pentru alerte — nimic mai mult.",
-  ],
-  [
-    "Funcționează și pe telefon?",
-    "Da. AutoDocs este un PWA (Progressive Web App) — îl instalezi direct din browser pe ecranul principal, fără App Store sau Google Play. Funcționează offline și primești notificări push ca o aplicație nativă.",
-  ],
-];
+import { FAQ_ITEMS } from "@/lib/faq";
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -60,8 +26,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export function Faq() {
   return (
     <div className="mt-8">
-      {FAQ_DATA.map(([q, a]) => (
-        <FaqItem key={q} q={q} a={a} />
+      {FAQ_ITEMS.map(({ question, answer }) => (
+        <FaqItem key={question} q={question} a={answer} />
       ))}
     </div>
   );

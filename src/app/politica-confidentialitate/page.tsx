@@ -3,6 +3,7 @@ import { ADMIN_EMAIL } from "@/lib/constants";
 import { LegalList, LegalPage, LegalSection } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/politica-confidentialitate" },
   title: "Politica de confidențialitate — Zero Amenzi",
   description:
     "Ce date colectăm (număr de înmatriculare și, opțional, email), cum le folosim, cine le procesează și cum îți exerciți drepturile GDPR.",

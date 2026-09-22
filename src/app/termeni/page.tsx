@@ -4,6 +4,7 @@ import { ADMIN_EMAIL } from "@/lib/constants";
 import { LegalList, LegalPage, LegalSection } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/termeni" },
   title: "Termeni și condiții — Zero Amenzi",
   description:
     "Condițiile de folosire a serviciului: acces gratuit, fără garanții, rezultatele verificării au caracter informativ și nu înlocuiesc sursele oficiale.",

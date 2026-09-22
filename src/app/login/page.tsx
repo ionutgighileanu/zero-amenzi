@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AuthForm } from "@/components/auth/AuthForm";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/login" },
   title: "Conectare — AutoDocs",
   description:
     "Intră în contul tău Zero Amenzi ca să îți vezi mașinile, documentele salvate și alertele configurate pentru expirarea actelor auto.",

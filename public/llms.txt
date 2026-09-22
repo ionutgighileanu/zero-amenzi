@@ -1,0 +1,25 @@
+# Zero Amenzi
+
+> Serviciu românesc care verifică valabilitatea actelor auto (ITP, RCA, rovinietă) și trimite alerte înainte de expirare, ca șoferii să nu ia amenzi. Pentru mașini personale și pentru flote.
+
+Verificarea publică nu cere cont: introduci numărul de înmatriculare și primești rezultatul pe email. Contul adaugă alerte automate înainte de expirare, pe email și prin notificări push.
+
+Perioada gratuită acoperă un vehicul, timp de un an. Peste asta, 12 lei pe an pentru fiecare vehicul, același preț pentru persoane fizice și firme.
+
+Nu stocăm copii ale actelor de identitate, ale permisului sau ale talonului. Păstrăm doar numărul de înmatriculare, seria de șasiu și datele de expirare necesare alertelor.
+
+## Pagini
+
+- [Acasă](https://zero-amenzi.vercel.app/): ce face serviciul, prețuri, întrebări frecvente
+- [Verificare acte auto](https://zero-amenzi.vercel.app/verificare): verificare gratuită după numărul de înmatriculare, fără cont
+- [Creare cont](https://zero-amenzi.vercel.app/signup): cont pentru alerte automate, persoană fizică sau firmă
+- [Autentificare](https://zero-amenzi.vercel.app/login)
+
+## Legal
+
+- [Termeni și condiții](https://zero-amenzi.vercel.app/termeni): serviciul e oferit „ca atare", iar rezultatele au caracter informativ și nu înlocuiesc sursele oficiale
+- [Politica de confidențialitate](https://zero-amenzi.vercel.app/politica-confidentialitate): ce date păstrăm și drepturile utilizatorilor
+
+## Notă
+
+Rezultatele verificării au caracter informativ. Sursele oficiale rămân RAR pentru ITP, AIDA/ASF pentru RCA și CNAIR pentru rovinietă.
