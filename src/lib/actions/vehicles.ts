@@ -51,6 +51,34 @@ async function revalidateSpace(spaceId: string) {
   if (space) revalidatePath(spacePath(space));
 }
 
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Cererea de verificare legată de un vehicul (D-023) — la adăugare și la
+ * „Am reînnoit un act — verifică din nou". Întoarce eroarea, nu aruncă:
+ * apelanții decid ce înseamnă un eșec pentru ei.
+ *
+ * id/token generate aici, nu citite înapoi: un `.insert().select()` ar fi o
+ * a doua rundă degeaba pentru un rând pe care nu-l folosim imediat.
+ */
+async function insertVerificationRequest(
+  supabase: ServerClient,
+  vehicle: { id: string; plate: string }
+) {
+  const { data: auth } = await supabase.auth.getUser();
+  const { error } = await supabase.from("verification_requests").insert({
+    id: randomUUID(),
+    token: randomUUID(),
+    plate_number: vehicle.plate,
+    // Emailul contului: omul se așteaptă să primească rezultatul, nu doar
+    // să-l găsească în clopoțel.
+    email: auth.user?.email ?? null,
+    user_id: auth.user?.id ?? null,
+    vehicle_id: vehicle.id,
+  });
+  return error;
+}
+
 export async function addVehicleAction(spaceId: string, plate: string, vin: string) {
   // Fail-fast pe lungime, înaintea oricărei procesări: schema ar fi tăiat
   // tăcut la 32, dar un input de 5 000 de caractere nu e o greșeală de
@@ -108,21 +136,7 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
   // (D-023): cererea ajunge în digestul adminului, iar datele reale se scriu
   // în vehicle_docs la completare — vezi completeVerificationAction. Până
   // atunci cardul arată „în verificare", nu buline verzi.
-  //
-  // id/token generate aici, nu citite înapoi: policy-ul de SELECT pe cereri
-  // acoperă doar vehiculele spațiului, dar un `.insert().select()` ar fi o
-  // a doua rundă degeaba pentru un rând pe care nu-l folosim imediat.
-  const { data: auth } = await supabase.auth.getUser();
-  const { error: requestError } = await supabase.from("verification_requests").insert({
-    id: randomUUID(),
-    token: randomUUID(),
-    plate_number: vehicle.plate,
-    // Emailul contului: utilizatorul a adăugat mașina și se așteaptă să
-    // primească rezultatul, nu doar să-l găsească în clopoțel.
-    email: auth.user?.email ?? null,
-    user_id: auth.user?.id ?? null,
-    vehicle_id: vehicle.id,
-  });
+  const requestError = await insertVerificationRequest(supabase, vehicle);
 
   // Vehiculul există deja; un eșec aici nu-l anulează. Cardul rămâne cu
   // liniuțe (necunoscut), nu cu „în verificare" — ca să nu promită ceva ce nu
@@ -178,4 +192,57 @@ export async function deleteVehicleDocAction(docId: string, spaceId: string) {
   const { error } = await supabase.from("vehicle_docs").delete().eq("id", input.docId);
   if (error) throw new Error("Nu am putut șterge documentul.");
   await revalidateSpace(input.spaceId);
+}
+
+export type ReverifyResult = { ok: true; message: string } | { ok: false; error: string };
+
+/**
+ * „Am reînnoit un act — verifică din nou". Datele de pe card se schimbă doar
+ * printr-o verificare, deci fără asta un act reînnoit în altă parte ar rămâne
+ * „Expirat" pentru totdeauna. Creează o cerere nouă, pe același flux ca la
+ * adăugare; la completare, rezultatul suprascrie documentele vehiculului.
+ *
+ * Întoarce rezultat în loc să arunce: în producție Next.js înlocuiește
+ * mesajul erorilor aruncate din Server Actions cu un text generic.
+ */
+export async function requestReverificationAction(
+  id: string,
+  spaceId: string
+): Promise<ReverifyResult> {
+  const parsed = vehicleByIdSchema.safeParse({ id, spaceId });
+  if (!parsed.success) return { ok: false, error: "Vehicul invalid." };
+
+  const supabase = await createClient();
+  const { data: vehicle } = await supabase
+    .from("vehicles")
+    .select("id, plate, space_id")
+    .eq("id", parsed.data.id)
+    .eq("space_id", parsed.data.spaceId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!vehicle) return { ok: false, error: "Vehiculul nu există sau nu ai acces la el." };
+
+  // O singură verificare în curs per vehicul: o a doua ar dubla munca
+  // adminului pentru același răspuns.
+  const { data: open } = await supabase
+    .from("verification_requests")
+    .select("id")
+    .eq("vehicle_id", vehicle.id)
+    .eq("status", "pending")
+    .limit(1);
+  if (open && open.length > 0) {
+    return { ok: true, message: "Verificarea e deja în curs. Te anunțăm când e gata." };
+  }
+
+  const error = await insertVerificationRequest(supabase, vehicle);
+  if (error) {
+    console.error("Cererea de re-verificare a eșuat:", error);
+    return { ok: false, error: "Nu am putut porni verificarea. Încearcă din nou." };
+  }
+
+  await revalidateSpace(parsed.data.spaceId);
+  return {
+    ok: true,
+    message: `Verificăm din nou actele pentru ${vehicle.plate}. Te anunțăm când sunt confirmate.`,
+  };
 }

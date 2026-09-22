@@ -639,3 +639,28 @@ Testat pe un cont de unică folosință creat prin API-ul de admin: signup
 Aș reveni dacă: Se conectează procesatorul de plată — atunci Abonamentele
 primesc istoric real. Sau dacă apare nevoia de a lista sesiunile active pe
 dispozitive; Supabase nu le expune, deci ar trebui un tabel propriu.
+
+## D-026 · 2026-09 · Cardul din garaj înlocuiește fereastra de detalii
+
+Context: După ce cardul și fereastra „Detalii vehicul" au ajuns să folosească
+aceeași listă de documente, fereastra repeta exact conținutul cardului, cu
+un click în plus.
+
+Decizie: În garaj, fereastra dispare. Totul se face pe card: documentele cu
+data completă, alertele suplimentare (adăugare pe loc, ștergere cu ✕), iar
+restul într-un meniu ⚙: „Am reînnoit un act — verifică din nou", „Premium
+pentru acest vehicul" și „Șterge vehiculul" (cu confirmare și anulare 30s).
+Eticheta „Acțiune necesară" / „Expiră curând" a dispărut: chenarul colorat
+al cardului spune același lucru.
+
+„Verifică din nou" rezolvă o gaură reală: datele unui vehicul se schimbă doar
+printr-o verificare, deci un RCA reînnoit în altă parte rămânea „Expirat"
+pentru totdeauna. Opțiunea creează o cerere nouă pe fluxul din D-023 (una
+singură în curs per vehicul); la completare rezultatul suprascrie documentele.
+
+În flote fereastra rămâne: tabelul de pe desktop n-are unde afișa alertele,
+adăugarea sau ștergerea, deci rândul deschide în continuare detaliile.
+
+Nu am pus în meniu editarea plăcuței sau a VIN-ului: schimbarea plăcuței e
+legată de regula de trial (D-024), iar o greșeală de tastare se rezolvă prin
+ștergere și re-adăugare.

@@ -5,7 +5,6 @@ import { Plus, Info } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { VehicleCard } from "@/components/app/VehicleCard";
-import { VehicleDetail } from "@/components/app/VehicleDetail";
 import { AddVehicleModal } from "@/components/app/AddVehicleModal";
 import { RcaModal } from "@/components/app/RcaModal";
 import { CascoModal } from "@/components/app/CascoModal";
@@ -16,6 +15,7 @@ import {
   addVehicleAction,
   addVehicleDocAction,
   deleteVehicleDocAction,
+  requestReverificationAction,
   softDeleteVehicleAction,
   undoDeleteVehicleAction,
 } from "@/lib/actions/vehicles";
@@ -75,17 +75,21 @@ export function GarageBoard({
     }
     setNotice(result.message);
   };
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailStartsAdding, setDetailStartsAdding] = useState(false);
-  const openDetail = (id: string, addAlert = false) => {
-    setDetailStartsAdding(addAlert);
-    setDetailId(id);
+
+  const reverify = async (vehicle: Vehicle) => {
+    setNotice(null);
+    const result = await requestReverificationAction(vehicle.id, space.id);
+    setNotice(result.ok ? result.message : result.error);
+    if (result.ok) {
+      setVehicles((list) =>
+        list.map((v) => (v.id === vehicle.id ? { ...v, verificationPending: true } : v))
+      );
+    }
   };
 
   const addBlocked = canAddVehicle(space, unpaidCount);
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
   const pendingCount = vehicles.filter((v) => v.verificationPending).length;
-  const detailVehicle = detailId ? vehicles.find((v) => v.id === detailId) : null;
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
@@ -191,11 +195,14 @@ export function GarageBoard({
             <VehicleCard
               key={v.id}
               vehicle={v}
-              onOpen={(veh) => openDetail(veh.id)}
-              onAddAlert={(veh) => openDetail(veh.id, true)}
+              alertTypes={alertTypes}
               onRca={setRcaVehicle}
               onCasco={setCascoVehicle}
               onUpgrade={requestUpgrade}
+              onAddDoc={addDoc}
+              onDeleteDoc={deleteDoc}
+              onDelete={softDelete}
+              onReverify={reverify}
             />
           ))}
         </AnimatePresence>
@@ -218,19 +225,6 @@ export function GarageBoard({
           onSubmit={addVehicle}
           strictRoPlate
           blockedReason={addBlocked.allowed ? null : addBlocked.reason}
-        />
-      )}
-      {detailVehicle && (
-        <VehicleDetail
-          vehicle={detailVehicle}
-          alertTypes={alertTypes}
-          onRca={setRcaVehicle}
-          onCasco={setCascoVehicle}
-          onAddDoc={addDoc}
-          onDeleteDoc={deleteDoc}
-          onDelete={softDelete}
-          onClose={() => setDetailId(null)}
-          startAdding={detailStartsAdding}
         />
       )}
       {rcaVehicle && <RcaModal vehicle={rcaVehicle} onClose={() => setRcaVehicle(null)} />}
