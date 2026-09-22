@@ -23,11 +23,17 @@ export function describeResult(
 
   if (expiresAt) {
     const status = getStatus(expiresAt);
-    if (status === "expired") return { tone: "expired", text: "EXPIRATĂ" };
+    const d = daysUntil(expiresAt) ?? 0;
+    if (status === "expired") {
+      return d === 0
+        ? { tone: "expired", text: `Expiră azi · ${formatDate(expiresAt)}` }
+        : { tone: "expired", text: "EXPIRATĂ" };
+    }
     if (status === "warning") {
-      const d = daysUntil(expiresAt) ?? 0;
-      const when = d === 0 ? "Expiră azi" : `Expiră în ${d} ${d === 1 ? "zi" : "zile"}`;
-      return { tone: "warning", text: `${when} · ${formatDate(expiresAt)}` };
+      return {
+        tone: "warning",
+        text: `Expiră în ${d} ${d === 1 ? "zi" : "zile"} · ${formatDate(expiresAt)}`,
+      };
     }
     return { tone: "valid", text: `Valid până la ${formatDate(expiresAt)}` };
   }

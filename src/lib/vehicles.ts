@@ -104,7 +104,8 @@ export function minDays(v: Vehicle): number {
 
 export function vehicleStatus(v: Vehicle): "valid" | "warning" | "expired" {
   const d = minDays(v);
-  if (d < 0) return "expired";
+  // Ziua expirării e în nivelul roșu, ca în getStatus.
+  if (d <= 0) return "expired";
   if (d <= 15) return "warning";
   return "valid";
 }

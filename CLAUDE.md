@@ -33,7 +33,7 @@ Monetizare prin comision broker la RCA/CASCO cumpărat prin platformă.
 - **Semafor documente:**
   - Valid (>15 zile): punct verde discret `emerald-500`
   - Avertizare (≤15 zile): pill amber cu „X zile"
-  - Expirat: pill roșu solid „Expirat"
+  - Expirat sau expiră azi: pill roșu solid „Expirat" / „Expiră azi"
 
 ## Prototipuri vizuale (referință, nu cod de producție)
 - `src/prototypes/autodocs-landing.jsx` — landing page complet

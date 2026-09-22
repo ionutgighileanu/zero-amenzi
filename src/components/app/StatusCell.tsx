@@ -3,8 +3,8 @@ import { daysUntil, formatDate, getStatus } from "@/lib/status";
 /**
  * Semafor calibrat (vezi CLAUDE.md):
  * valid   → tăcut: punct verde + dată gri
- * warning → pastilă amber cu nr. de zile
- * expired → pastilă roșie solidă
+ * warning → pastilă amber cu nr. de zile (1–15)
+ * expired → pastilă roșie solidă: „Expiră azi" sau „Expirat"
  */
 export function StatusCell({ date, pending }: { date: string | null | undefined; pending?: boolean }) {
   const status = getStatus(date);
@@ -34,14 +34,14 @@ export function StatusCell({ date, pending }: { date: string | null | undefined;
   if (status === "warning")
     return (
       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
-        {d === 0 ? "Expiră azi" : `${d} ${d === 1 ? "zi" : "zile"}`}
+        {d} {d === 1 ? "zi" : "zile"}
         <span className="font-normal text-amber-600">· {formatDate(date)}</span>
       </span>
     );
 
   return (
     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-600 rounded-full px-2.5 py-1">
-      Expirat
+      {d === 0 ? "Expiră azi" : "Expirat"}
       <span className="font-normal text-red-100">· {formatDate(date)}</span>
     </span>
   );

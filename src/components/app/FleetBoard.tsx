@@ -300,7 +300,7 @@ export function FleetBoard({
   const onDrivers = tab === "drivers";
 
   const kpis = [
-    { id: "expired" as const, label: "Expirate", value: counts.expired, tone: "text-red-600" },
+    { id: "expired" as const, label: "Expirate sau azi", value: counts.expired, tone: "text-red-600" },
     { id: "problems" as const, label: "Expiră ≤ 15 zile", value: counts.warning, tone: "text-amber-600" },
     { id: "all" as const, label: "În regulă", value: counts.valid, tone: "text-slate-900" },
   ];

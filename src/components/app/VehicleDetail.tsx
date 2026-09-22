@@ -25,15 +25,8 @@ type VehicleDetailProps = {
 
 const PILL = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap";
 
-/**
- * Eticheta de stare a unui document.
- *
- * Pragurile sunt aceleași ca în restul aplicației (getStatus: avertizare de
- * la 15 zile în jos), ca fereastra să nu contrazică cardul de sub ea.
- * Excepție deliberată: „Expiră azi" e roșu aici, nu portocaliu — în ziua
- * expirării nu mai e un avertisment, e ultima zi în care se mai poate face
- * ceva fără amendă.
- */
+/** Eticheta de stare a unui document — aceleași praguri și culori ca în
+ * restul aplicației (getStatus), ca fereastra să nu contrazică cardul. */
 function DocBadge({ date, pending }: { date: string | null | undefined; pending?: boolean }) {
   const d = daysUntil(date);
 

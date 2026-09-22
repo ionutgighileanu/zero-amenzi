@@ -49,10 +49,16 @@ export function daysUntil(
   return dayNumber(calendarDate(dateStr)) - dayNumber(todayInRomania(now));
 }
 
+/**
+ * Nivelul de urgență al unui document. „expired" înseamnă „acțiune acum":
+ * cuprinde și ziua expirării — în ultima zi nu mai e un avertisment, e ultima
+ * zi fără amendă. Textul afișat le distinge în continuare („Expiră azi" față
+ * de „Expirat"), pe baza lui daysUntil; culoarea e aceeași peste tot.
+ */
 export function getStatus(dateStr: string | null | undefined): DocStatus {
   const d = daysUntil(dateStr);
   if (d === null) return "none";
-  if (d < 0) return "expired";
+  if (d <= 0) return "expired";
   if (d <= 15) return "warning";
   return "valid";
 }
