@@ -65,7 +65,6 @@ export type AdminUserRow = {
   notificationsUnread: number;
   /** Per tip de act (RCA, ITP, Rovinietă): cel mai apropiat de expirare. */
   docsByType: Record<string, AdminSoonestDoc | undefined>;
-  soonestDoc: AdminSoonestDoc | null;
 };
 
 export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
@@ -130,10 +129,6 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
           docsByType[doc.type] = { type: doc.type, expiresAt: doc.expires_at, plate, days };
         }
       }
-      const soonestDoc = coreTypes
-        .map((t) => docsByType[t])
-        .filter((d): d is AdminSoonestDoc => d !== undefined)
-        .sort((a, b) => a.days - b.days)[0] ?? null;
 
       return {
         id: authUser.id,
@@ -155,7 +150,6 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
           (n) => n.user_id === authUser.id && !n.read_at
         ).length,
         docsByType,
-        soonestDoc,
       } satisfies AdminUserRow;
     })
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));

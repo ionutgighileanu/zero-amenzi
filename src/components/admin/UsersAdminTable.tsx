@@ -11,7 +11,7 @@ import type { AdminUserRow } from "@/lib/admin/users";
 /** Cele trei acte obligatorii, în ordinea din tabel. */
 const CORE_TYPES = [CORE_DOC_TYPES.rca, CORE_DOC_TYPES.itp, CORE_DOC_TYPES.rovinieta];
 
-type SortKey = "createdAt" | "lastSignInAt" | "vehicles" | "requests" | "urgency";
+type SortKey = "createdAt" | "lastSignInAt" | "vehicles" | "requests" | "rca" | "itp" | "rovinieta";
 
 const HEADERS: { key: SortKey | null; label: string }[] = [
   { key: null, label: "Utilizator" },
@@ -20,7 +20,9 @@ const HEADERS: { key: SortKey | null; label: string }[] = [
   { key: null, label: "Spații" },
   { key: "vehicles", label: "Vehicule" },
   { key: "requests", label: "Cereri" },
-  { key: "urgency", label: "RCA / ITP / Rovinietă" },
+  { key: "rca", label: "RCA" },
+  { key: "itp", label: "ITP" },
+  { key: "rovinieta", label: "Rovinietă" },
   { key: null, label: "Alerte" },
 ];
 
@@ -29,9 +31,17 @@ const SORTERS: Record<SortKey, (u: AdminUserRow) => string | number> = {
   lastSignInAt: (u) => u.lastSignInAt ?? "",
   vehicles: (u) => u.vehiclesActive,
   requests: (u) => u.requestsTotal,
-  // Cel mai urgent primul: inversăm semnul, fiindcă sortarea e descrescătoare.
-  urgency: (u) => (u.soonestDoc ? -u.soonestDoc.days : -Infinity),
+  // Pe acte, sortarea începe cu cel mai urgent: inversăm semnul, fiindcă
+  // sortarea e descrescătoare. Conturile fără actul respectiv ajung ultimele.
+  rca: (u) => docDays(u, CORE_DOC_TYPES.rca),
+  itp: (u) => docDays(u, CORE_DOC_TYPES.itp),
+  rovinieta: (u) => docDays(u, CORE_DOC_TYPES.rovinieta),
 };
+
+function docDays(u: AdminUserRow, type: string): number {
+  const doc = u.docsByType[type];
+  return doc ? -doc.days : -Infinity;
+}
 
 export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
   const [query, setQuery] = useState("");
@@ -147,33 +157,20 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  {u.vehiclesActive === 0 ? (
-                    <span className="text-sm text-slate-400">—</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {CORE_TYPES.map((type) => {
-                        const doc = u.docsByType[type];
-                        return (
-                          <span
-                            key={type}
-                            className="inline-flex items-center gap-1 whitespace-nowrap"
-                            title={doc ? `${type} · ${doc.plate}` : `${type}: nicio dată`}
-                          >
-                            <span className="text-[10px] font-bold uppercase text-slate-400">
-                              {type === CORE_DOC_TYPES.rovinieta ? "ROV" : type}
-                            </span>
-                            {doc ? (
-                              <StatusCell date={doc.expiresAt} />
-                            ) : (
-                              <span className="text-xs text-slate-400">—</span>
-                            )}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </td>
+                {CORE_TYPES.map((type) => {
+                  const doc = u.docsByType[type];
+                  return (
+                    <td key={type} className="px-4 py-3 whitespace-nowrap">
+                      {doc ? (
+                        <span title={`${type} · ${doc.plate}`}>
+                          <StatusCell date={doc.expiresAt} />
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-400">—</span>
+                      )}
+                    </td>
+                  );
+                })}
                 <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                   email {u.emailNotifications ? "da" : "nu"} · push {u.pushDevices}
                   {u.notificationsUnread > 0 && ` · ${u.notificationsUnread} necitite`}
@@ -191,7 +188,7 @@ export function UsersAdminTable({ users }: { users: AdminUserRow[] }) {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-500">
                   Niciun utilizator pentru „{query}”.
                 </td>
               </tr>
