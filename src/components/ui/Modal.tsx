@@ -14,10 +14,15 @@ type ModalProps = {
   title: string;
   subtitle?: string;
   wide?: boolean;
+  /** Înlocuiește titlul vizibil (ex. plăcuța, în Detalii vehicul). `title`
+   * rămâne obligatoriu: devine eticheta ferestrei pentru cititoarele de ecran. */
+  header?: ReactNode;
+  /** Corp fără padding, pentru conținut cu separatoare de la o margine la alta. */
+  flush?: boolean;
   children: ReactNode;
 };
 
-export function Modal({ onClose, title, subtitle, wide, children }: ModalProps) {
+export function Modal({ onClose, title, subtitle, wide, header, flush, children }: ModalProps) {
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -57,10 +62,12 @@ export function Modal({ onClose, title, subtitle, wide, children }: ModalProps) 
         transition={{ duration: DURATION.enter, ease: EASE_OUT }}
       >
         <div className="flex justify-between items-start px-5 pt-5 pb-4 border-b border-slate-100 shrink-0">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 font-display">{title}</h3>
-            {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
-          </div>
+          {header ?? (
+            <div>
+              <h3 className="text-base font-bold text-slate-900 font-display">{title}</h3>
+              {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+            </div>
+          )}
           <button
             onClick={onClose}
             aria-label="Închide"
@@ -69,7 +76,7 @@ export function Modal({ onClose, title, subtitle, wide, children }: ModalProps) 
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5">{children}</div>
+        <div className={`flex-1 overflow-y-auto ${flush ? "" : "p-5"}`}>{children}</div>
       </motion.div>
     </motion.div>
   );

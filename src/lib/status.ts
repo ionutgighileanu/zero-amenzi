@@ -67,6 +67,16 @@ export function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
+/** Zi + lună, fără an („22 sept."), pentru etichete scurte. */
+export function formatDayMonth(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("ro-RO", {
+    timeZone: ROMANIA_TIMEZONE,
+    day: "numeric",
+    month: "short",
+  });
+}
+
 /** Dată + oră, pentru momente punctuale (ex. când a fost trimisă o cerere
  * de verificare), spre deosebire de formatDate care e pentru zile calendaristice. */
 export function formatDateTime(dateStr: string | null | undefined): string {
