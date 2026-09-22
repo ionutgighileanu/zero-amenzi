@@ -1,40 +1,101 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchUserSpaces } from "@/lib/spaces";
 import { NotificationSettings } from "@/components/app/NotificationSettings";
+import { AccountDetails } from "@/components/app/AccountDetails";
+import { AccountSecurity } from "@/components/app/AccountSecurity";
+import { SubscriptionOverview, type OverviewVehicle } from "@/components/app/SubscriptionOverview";
 
 export const metadata: Metadata = {
-  title: "Preferințe alerte — AutoDocs",
+  title: "Setări cont — AutoDocs",
   description:
-    "Alege cum vrei să primești alertele înainte de expirarea actelor auto: pe email, prin notificări push sau în aplicație. Le poți schimba oricând.",
+    "Datele contului, canalele de alertă, starea abonamentelor pe fiecare vehicul, deconectarea de pe toate dispozitivele și ștergerea contului.",
 };
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
+  const user = auth.user;
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("email_notifications")
-    .eq("id", auth.user.id)
-    .single();
+  const [{ data: userRow }, { count: pushCount }, spaces] = await Promise.all([
+    supabase.from("users").select("email_notifications").eq("id", user.id).single(),
+    supabase
+      .from("push_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    fetchUserSpaces(supabase, user.id),
+  ]);
 
-  const { count: pushCount } = await supabase
-    .from("push_subscriptions")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", auth.user.id);
+  const { data: vehicleRows } = spaces.length
+    ? await supabase
+        .from("vehicles")
+        .select("id, space_id, plate, paid_until")
+        .in(
+          "space_id",
+          spaces.map((s) => s.id)
+        )
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true })
+    : { data: [] };
+
+  const vehicles: OverviewVehicle[] = (vehicleRows ?? []).map((v) => ({
+    id: v.id,
+    spaceId: v.space_id,
+    plate: v.plate,
+    paidUntil: v.paid_until,
+  }));
+
+  // Flotele în care userul e owner — cad odată cu contul (cascadă pe
+  // spaces.owner_id), deci trebuie numite înainte de confirmarea ștergerii.
+  const ownedFleetNames = spaces
+    .filter((s) => s.kind === "fleet" && s.ownerId === user.id)
+    .map((s) => s.name);
+
+  const fullName =
+    typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : "";
 
   return (
-    <main className="max-w-md mx-auto px-4 sm:px-6 py-12">
-      <h1 className="text-xl font-extrabold tracking-tight font-display">Preferințe alerte</h1>
-      <p className="text-sm text-slate-500 mt-1 mb-6">
-        Alegi canalele prin care primești alerte de expirare a documentelor.
-      </p>
-      <NotificationSettings
-        initialEmailEnabled={userRow?.email_notifications ?? true}
-        initialPushEnabled={(pushCount ?? 0) > 0}
-      />
+    <main className="max-w-xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+      <div>
+        <h1 className="text-xl font-extrabold tracking-tight font-display">Setări cont</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Datele contului, alertele și abonamentele tale.
+        </p>
+      </div>
+
+      <Section title="Cont">
+        <AccountDetails
+          initialName={fullName}
+          email={user.email ?? ""}
+          pendingEmail={user.new_email ?? null}
+        />
+      </Section>
+
+      <Section title="Alerte">
+        <NotificationSettings
+          initialEmailEnabled={userRow?.email_notifications ?? true}
+          initialPushEnabled={(pushCount ?? 0) > 0}
+        />
+      </Section>
+
+      <Section title="Abonamente">
+        <SubscriptionOverview spaces={spaces} vehicles={vehicles} />
+      </Section>
+
+      <Section title="Securitate">
+        <AccountSecurity ownedFleetNames={ownedFleetNames} />
+      </Section>
     </main>
   );
 }

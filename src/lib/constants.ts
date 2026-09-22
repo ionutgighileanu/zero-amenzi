@@ -115,7 +115,8 @@ export const FIELD_MAX_LENGTH = {
   cui: 20,
   /** Tip document sau atestat, inclusiv textul liber de la „Alt tip…". */
   docType: 60,
-  /** Nume tip de alertă suplimentară. */
+  /** Numele afișat al utilizatorului, din pagina de setări. */
+  fullName: 100,
 } as const;
 
 /** Plafon pe numărul de notificări marcate ca citite dintr-un singur apel.

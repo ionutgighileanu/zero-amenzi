@@ -8,9 +8,19 @@ import { PENDING_ORG_COOKIE } from "@/lib/constants";
  * email (signup) și OAuth (Google). Schimbă `code` pe o sesiune și, dacă
  * exista o intenție de firmă în așteptare, creează organizația abia acum.
  */
+/**
+ * Destinația după autentificare. Acceptă doar căi din `/app/`: un `next`
+ * arbitrar ar transforma callback-ul într-un open redirect — un link de
+ * phishing pe domeniul nostru care trimite omul pe alt site după login.
+ */
+function safeNext(value: string | null): string {
+  return value && value.startsWith("/app/") ? value : "/app/garage";
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const next = safeNext(url.searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
@@ -39,8 +49,16 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(new URL("/app/garage", url.origin));
+      return NextResponse.redirect(new URL(next, url.origin));
     }
+
+    // Confirmarea schimbării de email deschisă pe alt dispozitiv decât cel
+    // care a pornit-o: schimbul de cod pică (verificatorul PKCE stă în
+    // cookie-urile celuilalt browser), dar schimbarea s-a aplicat deja pe
+    // serverul Supabase. Dacă omul are totuși o sesiune aici, nu-l trimitem
+    // la „eroare de autentificare" pentru ceva ce a reușit.
+    const { data: existing } = await supabase.auth.getUser();
+    if (existing.user) return NextResponse.redirect(new URL(next, url.origin));
   }
 
   return NextResponse.redirect(new URL("/login?error=auth", url.origin));

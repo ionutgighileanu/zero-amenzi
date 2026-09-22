@@ -14,6 +14,7 @@ export type Space = SubscribableSpace & {
   kind: SpaceKind;
   name: string;
   cui: string | null;
+  ownerId: string;
 };
 
 export function mapSpaceRow(row: SpaceRow): Space {
@@ -22,6 +23,7 @@ export function mapSpaceRow(row: SpaceRow): Space {
     kind: row.kind,
     name: row.name,
     cui: row.cui,
+    ownerId: row.owner_id,
     subscriptionStatus: row.subscription_status,
     trialEndsAt: row.trial_ends_at,
   };

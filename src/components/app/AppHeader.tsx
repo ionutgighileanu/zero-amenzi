@@ -147,7 +147,7 @@ export function AppHeader({ email, spaces, notifications }: AppHeaderProps) {
             <NotificationBell initialNotifications={notifications} />
             <Link
               href="/app/settings"
-              aria-label="Preferințe alerte"
+              aria-label="Setări cont"
               className="min-h-11 min-w-11 inline-flex items-center justify-center text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             >
               <Settings size={17} />

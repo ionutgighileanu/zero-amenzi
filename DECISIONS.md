@@ -595,3 +595,47 @@ există încă (azi `startUpgradeAction` cere `vehicleIds` existente, deci
 singura cale e să plătești vehiculul curent, ceea ce trece spațiul pe
 'active' și ridică plafonul). Sau dacă plafonul de 1 se dovedește prea agresiv
 la B2B, caz în care devine o coloană pe `spaces`, nu o constantă în cod.
+
+## D-025 · 2026-09 · Pagina de setări cont
+
+Context: `/app/settings` avea o singură secțiune, preferințele de notificare.
+Nu exista nicio cale de a schimba emailul, de a ieși de pe alte dispozitive
+sau de a șterge contul — iar politica de confidențialitate promite dreptul de
+ștergere (GDPR art. 17), pe care îl puteai exercita doar scriindu-ne.
+
+Decizie: pagina are patru secțiuni — Cont (nume, email), Alerte (ce exista),
+Abonamente (starea per vehicul), Securitate (deconectare globală, ștergere).
+Am lăsat deliberat afară ce nu există în produs: PIN, SMS, limbă, mod
+întunecat, plată recurentă, telefon. Un comutator care nu face nimic e mai
+rău decât lipsa lui.
+
+Detalii care nu sunt evidente:
+- **Schimbarea emailului cerea o migrație.** `handle_new_user` copia emailul
+  în `public.users` doar la INSERT. După o schimbare prin Supabase Auth,
+  oglinda rămânea pe adresa veche, iar alertele pleacă de acolo — funcția ar
+  fi părut reușită și n-ar fi schimbat nimic. Triggerul
+  `on_auth_user_email_changed` (20260922100000) sincronizează la confirmare.
+  Adresa nu se schimbă la apăsarea butonului, ci la confirmarea din email.
+- **Numele stă în `user_metadata.full_name`**, nu într-o coloană: Google îl
+  completează deja acolo, deci o singură sursă, fără migrație.
+- **Ștergerea folosește cascadele existente.** Dispar: users, spațiul
+  personal, flotele deținute (inclusiv pentru ceilalți membri — pagina le
+  numește înainte de confirmare), vehicule, documente, push, notificări.
+- **Ce rămâne, deliberat:** `plate_trials` păstrează plăcuța ca trial
+  consumat (`first_space_id` devine null). Altfel ștergerea contului ar fi o
+  cale de a relua anul gratuit pentru aceeași mașină. Emailul de pe cererile
+  publice de verificare se golește explicit înainte de ștergere, fiindcă după
+  ea `user_id` devine null și nu mai știm care erau ale omului.
+- **Confirmarea acceptă și „STERGE"** fără diacritice: pe o tastatură de
+  telefon fără română, „Ș" e o barieră de tastatură, nu de intenție.
+- **Callback-ul de auth acceptă `next`**, dar doar căi din `/app/`, ca să nu
+  devină open redirect.
+- Abonamentele arată starea curentă, nu un istoric: nu există tabel de plăți.
+
+Testat pe un cont de unică folosință creat prin API-ul de admin: signup
+(users + spațiu personal + membership owner), schimbare email (sincronizată
+în public.users), ștergere (toate rândurile dispar).
+
+Aș reveni dacă: Se conectează procesatorul de plată — atunci Abonamentele
+primesc istoric real. Sau dacă apare nevoia de a lista sesiunile active pe
+dispozitive; Supabase nu le expune, deci ar trebui un tabel propriu.
