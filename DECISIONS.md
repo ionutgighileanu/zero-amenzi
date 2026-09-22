@@ -664,3 +664,30 @@ adăugarea sau ștergerea, deci rândul deschide în continuare detaliile.
 Nu am pus în meniu editarea plăcuței sau a VIN-ului: schimbarea plăcuței e
 legată de regula de trial (D-024), iar o greșeală de tastare se rezolvă prin
 ștergere și re-adăugare.
+
+## D-027 · 2026-09 · Panoul de admin arată baza de date pe utilizator
+
+Context: Panoul de admin avea o singură pagină, coada de cereri de verificare.
+Nu exista nicio cale de a vedea clienții — cine s-a înregistrat, ce spații și
+vehicule are, dacă alertele îi sunt pornite — decât interogând direct baza.
+
+Decizie: Panoul primește tab-uri („Cereri de verificare", „Utilizatori"), un
+tabel cu toate conturile și o pagină de detaliu per cont. Citirea se face cu
+service_role, nu prin RLS: altfel ar fi trebuit să deschid fiecare tabel către
+emailul de admin, ceea ce lărgește și ce poate citi aplicația obișnuită.
+
+Pentru că service_role ocolește complet RLS, garda a fost mutată într-un
+singur loc (`requireAdmin`, apelat din layout-ul /admin) în loc să fie copiată
+în fiecare pagină: o verificare uitată ar expune toată baza. Paginile de admin
+primesc și `noindex`.
+
+Ce NU se afișează: cheile de criptare ale abonamentelor push (secrete, inutile
+pe ecran) — doar host-ul serviciului și data.
+
+Numărătorile se fac în memorie, din câteva interogări. La zeci de rânduri e
+mai simplu decât agregări în DB; de la câteva mii de conturi merită paginare.
+
+Panoul e deocamdată doar de citit. Prima acțiune care merită adăugată e
+activarea manuală de Premium: cu plafonul din D-024 și fără procesator de
+plată, cine lovește limita n-are altă cale decât să scrie, iar activarea se
+face acum direct din baza de date.

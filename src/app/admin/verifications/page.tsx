@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { requireAdmin } from "@/lib/admin";
 import { VerificationsAdminBoard } from "@/components/admin/VerificationsAdminBoard";
 
 export const metadata: Metadata = {
@@ -16,11 +14,8 @@ export default async function AdminVerificationsPage({
   searchParams: Promise<{ request?: string }>;
 }) {
   const { request } = await searchParams;
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-
-  if (!auth.user) redirect("/login");
-  if (auth.user.email !== ADMIN_EMAIL) redirect("/app/garage");
+  // Garda rulează deja în layout; aici avem nevoie doar de client.
+  const { supabase } = await requireAdmin();
 
   const { data: requests } = await supabase
     .from("verification_requests")

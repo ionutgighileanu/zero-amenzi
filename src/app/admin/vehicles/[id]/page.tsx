@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/admin";
 import { VehicleDetails } from "@/components/admin/VehicleDetails";
 
 export const metadata: Metadata = {
@@ -12,11 +11,7 @@ export const metadata: Metadata = {
 
 export default async function AdminVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-
-  if (!auth.user) redirect("/login");
-  if (auth.user.email !== ADMIN_EMAIL) redirect("/app/garage");
+  const { supabase } = await requireAdmin();
 
   const { data: vehicle } = await supabase.from("vehicles").select("*").eq("id", id).single();
   if (!vehicle) notFound();
