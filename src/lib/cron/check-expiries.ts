@@ -3,13 +3,17 @@ import { mapSpaceRow, spacePath } from "@/lib/spaces";
 import { sendAlertEmail } from "@/lib/email/send-alert";
 import { sendPushAlert } from "@/lib/push/send-alert";
 import { NOTIFICATION_THRESHOLDS, EMAIL_DAILY_LIMIT } from "@/lib/constants";
+import { todayInRomania } from "@/lib/status";
 import type { Database } from "@/lib/supabase/database.types";
 
 type PushSubscriptionRow = Database["public"]["Tables"]["push_subscriptions"]["Row"];
 
+/** Azi în România, ca miezul nopții UTC al acelei zile — baza pentru
+ * addDaysISO. Înainte era ziua UTC, care coincide cu cea românească doar
+ * pentru că cronul rulează la 08:00 UTC; la o rulare între 21:00 și 24:00 UTC
+ * alertele ar fi plecat cu o zi decalate. */
 function todayUTC(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  return new Date(`${todayInRomania()}T00:00:00Z`);
 }
 
 function addDaysISO(base: Date, days: number): string {

@@ -26,10 +26,8 @@ export function describeResult(
     if (status === "expired") return { tone: "expired", text: "EXPIRATĂ" };
     if (status === "warning") {
       const d = daysUntil(expiresAt) ?? 0;
-      return {
-        tone: "warning",
-        text: `Expiră în ${d} ${d === 1 ? "zi" : "zile"} · ${formatDate(expiresAt)}`,
-      };
+      const when = d === 0 ? "Expiră azi" : `Expiră în ${d} ${d === 1 ? "zi" : "zile"}`;
+      return { tone: "warning", text: `${when} · ${formatDate(expiresAt)}` };
     }
     return { tone: "valid", text: `Valid până la ${formatDate(expiresAt)}` };
   }
