@@ -1,21 +1,22 @@
 import { AlertTriangle } from "lucide-react";
-import { daysUntil, formatDate, formatDayMonth, getStatus } from "@/lib/status";
+import { daysUntil, formatDate, getStatus } from "@/lib/status";
 
 const PILL =
   "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap";
 
 /**
- * Eticheta de stare a unui document — SINGURA din aplicație. Card, tabel de
- * flotă, card de flotă pe mobil, modalul de detalii și lista de alerte
- * suplimentare o folosesc toate, ca același act să arate identic oriunde.
- * Înainte cardul și modalul aveau fiecare propria etichetă și se contraziceau
- * vizual pentru aceeași dată.
+ * Eticheta de stare a unui document — SINGURA din aplicație (card, card de
+ * flotă, tabel de flotă, modal, alerte suplimentare), ca același act să arate
+ * identic oriunde.
+ *
+ * Data completă de expirare apare MEREU, pe fiecare etichetă. E informația de
+ * bază a produsului: omul trebuie să vadă până când îi e valabil actul, nu
+ * doar câte zile au mai rămas.
  *
  * Semafor (vezi CLAUDE.md):
- *   roșu      → „Expirat" / „Expiră azi", cu iconiță de alertă
- *   portocaliu → 1–15 zile, cu ziua și luna
- *   verde     → zilele rămase
- * Data completă e mereu în `title`, deci se vede la hover.
+ *   roșu       → „⚠ Expirat · 21 sept. 2026" / „⚠ Expiră azi · 22 sept. 2026"
+ *   portocaliu → „9 zile · 1 oct. 2026" (1–15 zile)
+ *   verde      → „150 zile · 19 feb. 2027"
  */
 export function StatusCell({ date, pending }: { date: string | null | undefined; pending?: boolean }) {
   const status = getStatus(date);
@@ -38,24 +39,27 @@ export function StatusCell({ date, pending }: { date: string | null | undefined;
 
   if (status === "expired") {
     return (
-      <span className={`${PILL} bg-red-50 text-red-700 border border-red-200`} title={full}>
+      <span className={`${PILL} bg-red-50 text-red-700 border border-red-200`}>
         <AlertTriangle size={12} aria-hidden />
         {d === 0 ? "Expiră azi" : "Expirat"}
+        <span className="font-normal text-red-600/80">· {full}</span>
       </span>
     );
   }
 
   if (status === "warning") {
     return (
-      <span className={`${PILL} bg-amber-50 text-amber-800 border border-amber-200`} title={full}>
-        {d} {d === 1 ? "zi" : "zile"} · {formatDayMonth(date)}
+      <span className={`${PILL} bg-amber-50 text-amber-800 border border-amber-200`}>
+        {d} {d === 1 ? "zi" : "zile"}
+        <span className="font-normal text-amber-700/80">· {full}</span>
       </span>
     );
   }
 
   return (
-    <span className={`${PILL} bg-emerald-50 text-emerald-700`} title={full}>
+    <span className={`${PILL} bg-emerald-50 text-emerald-700`}>
       {d} zile
+      <span className="font-normal text-emerald-700/70">· {full}</span>
     </span>
   );
 }

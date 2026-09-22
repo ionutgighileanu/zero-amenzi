@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
-import { StatusCell } from "@/components/app/StatusCell";
+import { VehicleDocuments } from "@/components/app/VehicleDocuments";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
 import { VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
@@ -73,34 +73,7 @@ export function VehicleCard({ vehicle: v, onOpen, onRca, onCasco, onUpgrade }: V
             </p>
           </div>
         ) : (
-          <>
-            {(
-              [
-                ["RCA", v.rca],
-                ["ITP", v.itp],
-                ["Rovinietă", v.rovinieta],
-              ] as const
-            ).map(([label, date]) => (
-              <div
-                key={label}
-                className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0"
-              >
-                <span className="text-sm text-slate-500">{label}</span>
-                <StatusCell date={date} pending={v.verificationPending} />
-              </div>
-            ))}
-            {v.verificationPending && (
-              <p className="text-xs text-slate-500 py-2.5">
-                Verificăm actele în bazele oficiale. Te anunțăm când sunt confirmate.
-              </p>
-            )}
-            {(v.docs ?? []).length > 0 && (
-              <div className="flex justify-between items-center py-2.5">
-                <span className="text-sm text-slate-500">Alte documente</span>
-                <span className="text-xs text-slate-500">{v.docs!.length} adăugate</span>
-              </div>
-            )}
-          </>
+          <VehicleDocuments vehicle={v} onRca={onRca} />
         )}
       </div>
 

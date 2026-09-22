@@ -4,7 +4,7 @@ import { MouseEvent } from "react";
 import { ChevronRight, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
-import { StatusCell } from "@/components/app/StatusCell";
+import { VehicleDocuments } from "@/components/app/VehicleDocuments";
 import { getStatus } from "@/lib/status";
 import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
 
@@ -18,13 +18,6 @@ type FleetVehicleCardProps = {
 export function FleetVehicleCard({ vehicle: v, onOpen, onRca }: FleetVehicleCardProps) {
   const vStatus = vehicleStatus(v);
   const rcaStatus = getStatus(v.rca);
-
-  const docs: [string, string | null | undefined][] = [
-    ["RCA", v.rca],
-    ["ITP", v.itp],
-    ["Rovinietă", v.rovinieta],
-  ];
-  if (v.truck) docs.push(["Tahograf", v.tahograf]);
 
   const stop = (e: MouseEvent, fn: () => void) => {
     e.stopPropagation();
@@ -44,14 +37,7 @@ export function FleetVehicleCard({ vehicle: v, onOpen, onRca }: FleetVehicleCard
         <ChevronRight size={16} className="text-slate-300 shrink-0 mt-1.5" />
       </div>
 
-      <div className="space-y-2">
-        {docs.map(([label, date]) => (
-          <div key={label} className="flex justify-between items-center">
-            <span className="text-sm text-slate-500">{label}</span>
-            <StatusCell date={date} pending={v.verificationPending} />
-          </div>
-        ))}
-      </div>
+      <VehicleDocuments vehicle={v} onRca={onRca} />
 
       {rcaStatus !== "valid" && (
         <div className="mt-3 pt-3 border-t border-slate-100">
