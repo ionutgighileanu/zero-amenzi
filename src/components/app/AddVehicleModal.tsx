@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
+import { premiumContactHref } from "@/lib/contact";
 import { isValidRoPlateInput, sanitizePlateInput } from "@/lib/plate";
 import {
   PLATE_INPUT_MAX_LENGTH,
@@ -68,7 +69,14 @@ export function AddVehicleModal({
             </Button>
           </div>
           <p className="text-xs text-slate-500">
-            Plata online vine în curând. Până atunci, scrie-ne și îți activăm Premium manual.
+            Plata online vine în curând. Până atunci,{" "}
+            <a
+              href={premiumContactHref()}
+              className="font-semibold text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
+            >
+              scrie-ne
+            </a>{" "}
+            și îți activăm Premium manual.
           </p>
         </div>
       </Modal>

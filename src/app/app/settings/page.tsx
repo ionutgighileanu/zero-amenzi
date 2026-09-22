@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ADMIN_EMAIL } from "@/lib/constants";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchUserSpaces } from "@/lib/spaces";
@@ -96,6 +98,21 @@ export default async function SettingsPage() {
       <Section title="Securitate">
         <AccountSecurity ownedFleetNames={ownedFleetNames} />
       </Section>
+
+      <nav
+        aria-label="Informații legale"
+        className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500 pt-2 border-t border-slate-200"
+      >
+        <Link href="/politica-confidentialitate" className="hover:text-slate-700 hover:underline">
+          Politica de confidențialitate
+        </Link>
+        <Link href="/termeni" className="hover:text-slate-700 hover:underline">
+          Termeni și condiții
+        </Link>
+        <a href={`mailto:${ADMIN_EMAIL}`} className="hover:text-slate-700 hover:underline">
+          Contact
+        </a>
+      </nav>
     </main>
   );
 }

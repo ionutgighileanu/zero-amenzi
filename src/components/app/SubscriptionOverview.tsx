@@ -8,6 +8,7 @@ import {
   vehicleAccess,
   VEHICLE_PRICE_RON_PER_YEAR,
 } from "@/lib/subscription";
+import { premiumContactHref } from "@/lib/contact";
 
 export type OverviewVehicle = { id: string; spaceId: string; plate: string; paidUntil: string | null };
 
@@ -87,7 +88,15 @@ export function SubscriptionOverview({ spaces, vehicles }: SubscriptionOverviewP
 
       <p className="text-xs text-slate-500">
         Perioada gratuită acoperă {TRIAL_VEHICLE_LIMIT} vehicul pe spațiu. Premium costă{" "}
-        {VEHICLE_PRICE_RON_PER_YEAR} lei pe an per vehicul. Plata online vine în curând.
+        {VEHICLE_PRICE_RON_PER_YEAR} lei pe an per vehicul. Plata online vine în curând — până
+        atunci,{" "}
+        <a
+          href={premiumContactHref()}
+          className="font-semibold text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
+        >
+          scrie-ne
+        </a>{" "}
+        și activăm Premium manual.
       </p>
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Switch } from "@/components/ui/Switch";
+import { MOBILE_VIEWPORT_QUERY } from "@/lib/constants";
 import {
   isPushSupported,
   subscribePush,
@@ -30,6 +31,44 @@ type NotificationSettingsProps = {
   initialPushEnabled: boolean;
 };
 
+type PushEnvironment = {
+  supported: boolean;
+  mobile: boolean;
+  permission: NotificationPermission | "unsupported";
+};
+
+/**
+ * Starea browserului relevantă pentru push, citită doar pe client.
+ *
+ * `useSyncExternalStore` cu snapshot de server separat: pe server nu există
+ * `window`, iar un calcul direct la randare producea alt text pe server decât
+ * în browser (mismatch la hidratare). Snapshot-ul e un șir, ca React să-l
+ * poată compara stabil între randări.
+ */
+function subscribeToViewport(onChange: () => void) {
+  const query = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function readPushEnvironment(): string {
+  const supported = isPushSupported();
+  const mobile = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches;
+  const permission = supported ? Notification.permission : "unsupported";
+  return `${supported ? 1 : 0}|${mobile ? 1 : 0}|${permission}`;
+}
+
+function usePushEnvironment(): PushEnvironment | null {
+  const snapshot = useSyncExternalStore(subscribeToViewport, readPushEnvironment, () => "");
+  if (!snapshot) return null;
+  const [supported, mobile, permission] = snapshot.split("|");
+  return {
+    supported: supported === "1",
+    mobile: mobile === "1",
+    permission: permission as PushEnvironment["permission"],
+  };
+}
+
 export function NotificationSettings({
   initialEmailEnabled,
   initialPushEnabled,
@@ -39,7 +78,26 @@ export function NotificationSettings({
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
 
-  const supported = isPushSupported();
+  const env = usePushEnvironment();
+
+  // Push e oferit doar pe mobil (D-017). Pe desktop comutatorul dispare —
+  // excepție: dacă abonamentul există deja, rămâne ca să poată fi oprit.
+  const desktopOnly = env !== null && env.supported && !env.mobile && !pushEnabled;
+  // Blocat din browser: se vede la încărcare, nu abia după un click eșuat.
+  const blockedByBrowser = env?.permission === "denied" && !pushEnabled;
+  const showPushSwitch = !desktopOnly;
+  const pushTogglable = env !== null && env.supported && !blockedByBrowser;
+
+  const pushDescription =
+    env === null
+      ? "Primești o notificare pe telefon chiar dacă aplicația e închisă."
+      : !env.supported
+        ? "Browserul tău nu suportă notificări push."
+        : desktopOnly
+          ? "Disponibile pe telefon: deschide Zero Amenzi de pe telefon ca să le activezi."
+          : blockedByBrowser
+            ? "Browserul blochează notificările pentru acest site. Le poți debloca din setările site-ului."
+            : "Primești o notificare pe telefon chiar dacă aplicația e închisă.";
 
   const toggleEmail = (next: boolean) => {
     setEmailEnabled(next);
@@ -113,19 +171,17 @@ export function NotificationSettings({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-800">Push notifications</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {supported
-                ? "Primești o notificare pe telefon chiar dacă aplicația e închisă."
-                : "Browser-ul tău nu suportă notificări push."}
-            </p>
+            <p className="text-xs text-slate-500 mt-0.5">{pushDescription}</p>
           </div>
-          <Switch
-            checked={pushEnabled}
-            onChange={togglePush}
-            disabled={!supported}
-            busy={pushBusy}
-            label="Alerte push"
-          />
+          {showPushSwitch && (
+            <Switch
+              checked={pushEnabled}
+              onChange={togglePush}
+              disabled={!pushTogglable}
+              busy={pushBusy}
+              label="Alerte push"
+            />
+          )}
         </div>
         {pushError && (
           <p className="text-xs text-red-600 mt-2" role="alert">
