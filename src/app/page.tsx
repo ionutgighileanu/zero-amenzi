@@ -7,7 +7,6 @@ import {
   Bell,
   Zap,
   Mail,
-  MessageSquare,
   Car,
   Truck,
   Users,
@@ -172,7 +171,7 @@ export default function Home() {
             [
               [Car, "Introdu numărul mașinii", "Scrii numărul de înmatriculare și seria de șasiu din talon. Atât — două câmpuri, fără formulare lungi."],
               [Search, "Verificăm totul automat", "Interogăm bazele oficiale pentru ITP, RCA și rovinietă. Tu nu completezi nicio dată de expirare manual."],
-              [Bell, "Primești alerte la timp", "Email cu 30, 15 și 2 zile înainte de expirare, plus în ziua expirării. Cu PRO, primești și SMS."],
+              [Bell, "Primești alerte la timp", "Email cu 30, 15 și 2 zile înainte de expirare, plus în ziua expirării. Pe telefon, primești și notificări push."],
             ] as const
           ).map(([Icon, title, desc], i) => (
             <div key={i} className="flex flex-col">
@@ -319,7 +318,7 @@ export default function Home() {
           <SectionLabel>Tarife</SectionLabel>
           <SectionTitle className="mx-auto">Începi gratuit. Fără card.</SectionTitle>
           <p className="text-sm text-slate-500 mt-2">
-            Upgrade la PRO oricând — sau gratuit la fiecare RCA cumpărat prin noi.
+            Primul vehicul e gratuit un an. Upgrade la Premium oricând.
           </p>
         </div>
 
@@ -332,7 +331,7 @@ export default function Home() {
             </div>
             <p className="text-base font-bold text-slate-900 mt-2">Gratuit</p>
             <p className="text-sm text-slate-500 mt-1">
-              1 vehicul, verificare unică, alerte email.
+              1 vehicul, gratuit primul an.
             </p>
             <div className="border-t border-slate-200 my-5" />
             <ul className="space-y-3 text-sm text-slate-600 flex-1">
@@ -341,7 +340,7 @@ export default function Home() {
                   [Check, "Verificare ITP, RCA, rovinietă"],
                   [Mail, "Notificări pe email"],
                   [Car, "1 vehicul monitorizat"],
-                  [Search, "Actualizare la cerere"],
+                  [Search, "Re-verificare la cerere"],
                 ] as const
               ).map(([Icon, label]) => (
                 <li key={label} className="flex items-center gap-2.5">
@@ -355,29 +354,29 @@ export default function Home() {
             </Button>
           </div>
 
-          {/* PRO */}
+          {/* Premium */}
           <div className="rounded-2xl border-2 border-brand p-6 flex flex-col relative sm:-mt-4 shadow-xl">
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-white bg-brand rounded-full px-3 py-1 whitespace-nowrap">
               Recomandat
             </span>
             <div>
-              <span className="text-4xl sm:text-5xl font-black text-slate-900 font-display">15</span>
+              <span className="text-4xl sm:text-5xl font-black text-slate-900 font-display">12</span>
               <span className="text-base font-semibold text-slate-400 ml-1.5">
                 lei / an · vehicul
               </span>
             </div>
-            <p className="text-base font-bold text-slate-900 mt-2">PRO</p>
-            <p className="text-sm text-brand mt-1">
-              Gratuit cu RCA cumpărat prin noi.
+            <p className="text-base font-bold text-slate-900 mt-2">Premium</p>
+            <p className="text-sm text-slate-500 mt-1">
+              De la al doilea vehicul, sau după primul an.
             </p>
             <div className="border-t border-slate-200 my-5" />
             <ul className="space-y-3 text-sm text-slate-600 flex-1">
               {(
                 [
-                  [Check, "Vehicule nelimitate"],
-                  [MessageSquare, "Alerte email + SMS"],
-                  [Zap, "Actualizare automată recurentă"],
-                  [Car, "ITP, RCA, rovinietă + ARR"],
+                  [Check, "Oricâte vehicule, același preț"],
+                  [Mail, "Notificări pe email"],
+                  [Zap, "Notificări push pe telefon"],
+                  [Car, "ITP, RCA, rovinietă"],
                   [Bell, "Alerte suplimentare (CASCO, service…)"],
                   [Check, "Dashboard flotă B2B"],
                 ] as const
@@ -389,7 +388,7 @@ export default function Home() {
               ))}
             </ul>
             <Button variant="primary" className="w-full mt-6" href="/signup">
-              Activează PRO
+              Activează Premium
             </Button>
           </div>
 
@@ -408,12 +407,11 @@ export default function Home() {
             <ul className="space-y-3 text-sm text-slate-600 flex-1">
               {(
                 [
-                  [Check, "Tot ce include PRO"],
-                  [Truck, "Vehicule nelimitate per firmă"],
+                  [Check, "Tot ce include Premium"],
+                  [Truck, "Oricâte vehicule per firmă"],
                   [Users, "Șoferi cu atestate și avize"],
-                  [Bell, "Alerte ARR și tahograf"],
+                  [Bell, "Alerte tahograf"],
                   [Check, "Factură pe CUI"],
-                  [Check, "Adăugare vehicule în bulk"],
                 ] as const
               ).map(([Icon, label]) => (
                 <li key={label} className="flex items-center gap-2.5">
