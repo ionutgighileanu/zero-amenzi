@@ -15,7 +15,7 @@ export const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Cât costă?",
     answer:
-      "Primul vehicul e gratuit un an, cu acces complet: verificare ITP, RCA și rovinietă. Pentru fiecare vehicul în plus, sau după primul an, Premium costă 12 lei/an per vehicul — același preț pentru persoane fizice și pentru firme.",
+      "Primul vehicul e gratuit un an, cu acces complet: verificare ITP, RCA și rovinietă. Pentru fiecare vehicul în plus, sau după primul an, Premium costă 12 lei/an per vehicul — același preț pentru persoane fizice și pentru firme. Premium rămâne gratuit pentru fiecare RCA cumpărat prin platformă.",
   },
   {
     question: "Cum funcționează notificările?",
@@ -35,7 +35,7 @@ export const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Pot cumpăra RCA prin AutoDocs?",
     answer:
-      "Nu încă. Îți arătăm oferte orientative de la mai mulți asigurători, dar cumpărarea online și reducerea de preț legată de ea urmează să fie activate.",
+      "Da. Compari oferte de la mai mulți asigurători, alegi cea mai ieftină și închei polița online. Bonus: primești Premium gratuit 1 an la fiecare RCA cumpărat prin noi.",
   },
   {
     question: "Stocați documente personale?",

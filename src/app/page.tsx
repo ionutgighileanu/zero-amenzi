@@ -318,7 +318,7 @@ export default function Home() {
           <SectionLabel>Tarife</SectionLabel>
           <SectionTitle className="mx-auto">Începi gratuit. Fără card.</SectionTitle>
           <p className="text-sm text-slate-500 mt-2">
-            Primul vehicul e gratuit un an. Upgrade la Premium oricând.
+            Upgrade la Premium oricând — sau gratuit la fiecare RCA cumpărat prin noi.
           </p>
         </div>
 
@@ -366,8 +366,8 @@ export default function Home() {
               </span>
             </div>
             <p className="text-base font-bold text-slate-900 mt-2">Premium</p>
-            <p className="text-sm text-slate-500 mt-1">
-              De la al doilea vehicul, sau după primul an.
+            <p className="text-sm text-brand mt-1">
+              Gratuit cu RCA cumpărat prin noi.
             </p>
             <div className="border-t border-slate-200 my-5" />
             <ul className="space-y-3 text-sm text-slate-600 flex-1">
