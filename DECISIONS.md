@@ -735,3 +735,43 @@ punctuală de fiecare dată. Sau dacă se fixează o regiune Vercel apropiată d
 `eu-west-2` — atunci ipoteza despre latența transatlantică ar trebui
 reverificată cu măsurători reale (Vercel Analytics / PageSpeed Insights),
 nu doar dedusă din numărul de round-trip-uri.
+
+## D-029 · 2026-09 · Funcțiile rulau în Washington, baza de date la Londra
+
+Context: după D-028 (paralelizare + loading states) navigarea tot se simțea
+lentă. Măsurat pe producție în loc de presupus: `X-Vercel-Id` întorcea
+`fra1::iad1` pe toate rutele dinamice — cererea intra prin edge-ul din
+Frankfurt, dar funcțiile serverless executau în Washington DC, în timp ce
+Supabase e în `eu-west-2` (Londra). Fiecare interogare traversa Atlanticul.
+
+Capcană de măsurare, meritată de notat: prima verificare s-a făcut pe landing,
+care e static și servit din cache (`X-Vercel-Cache: HIT`, doar `fra1::`), deci
+părea că totul e în Europa. Abia o rută dinamică, necache-uită, arată unde
+rulează efectiv codul. Am tras concluzia greșită o dată exact din acest motiv.
+
+Decizie: `regions: ["lhr1"]` în vercel.json — aceeași zonă cu baza de date.
+
+Măsurat, `/login`, mediana din 12 cereri: **271ms → 184ms**. Scăzând latența
+proprie până la Frankfurt (~140ms, măsurată pe pagini statice din cache),
+partea de server a scăzut de la ~130ms la ~44ms, adică de aproape trei ori.
+Câștigul crește cu numărul de interogări per pagină: `/login` face două
+apeluri de autentificare, `/app/garage` face șase valuri.
+
+În plus, matcher-ul de middleware excludea doar imagini, deci `sw.js`,
+`manifest.json`, `robots.txt`, `llms.txt`, `sitemap.xml` și `offline.html`
+declanșau fiecare un `getUser()` către Supabase — un drum în rețea pentru un
+fișier static. `sw.js` și `manifest.json` la fiecare încărcare de PWA,
+`robots`/`sitemap` la fiecare crawler. Lista de extensii e acum largă.
+
+Ce rămâne, măsurat dar nereparat: **cold start**. Prima cerere după o perioadă
+de inactivitate a durat 0,84s față de ~0,20s la cald. Pe Vercel Hobby
+funcțiile adorm, iar utilizatorul care revine după o pauză plătește exact
+diferența asta — probabil o parte din senzația de „merge greu". Se atenuează
+cu Fluid Compute (setare de proiect în dashboard) sau cu un plan plătit, nu
+din cod.
+
+Aș reveni dacă: Se mută baza de date în altă regiune — atunci `regions` din
+vercel.json trebuie mutat odată cu ea, altfel reapare exact aceeași problemă,
+tăcut. Sau dacă apar utilizatori în afara Europei, caz în care merită
+comparat câștigul unei singure regiuni lângă DB cu cel al mai multor regiuni
+(disponibil doar pe planurile plătite).
