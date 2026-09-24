@@ -691,3 +691,47 @@ Panoul e deocamdată doar de citit. Prima acțiune care merită adăugată e
 activarea manuală de Premium: cu plafonul din D-024 și fără procesator de
 plată, cine lovește limita n-are altă cale decât să scrie, iar activarea se
 face acum direct din baza de date.
+
+## D-028 · 2026-09 · Trei cauze de navigare lentă, reparate
+
+Context: audit cerut pe performanța de navigare între pagini — dimensiuni de
+bundle, loading states, cache pe interogări Supabase, componente reîncărcate
+inutil. Raportul (fără modificări) a găsit trei cauze concrete, verificate
+pe artefactele de build, nu presupuse.
+
+**1. Interogări secvențiale în loc de paralele.** `/app/garage` și
+`/app/fleet/[spaceId]` făceau 6, respectiv 9 apeluri Supabase unul după altul,
+deși jumătate erau independente între ele (ex. `unpaidVehicleCount` nu
+depinde de `vehicleRows`; `drivers` și `alertTypes` nu depind de nimic din
+lanțul de vehicule). Rescrise cu `Promise.all`, grupate pe valuri de
+dependență reală: 9 apeluri secvențiale devin 4 valuri paralele pe pagina de
+flotă. Patternul exista deja corect în `/app/settings` — doar nefolosit
+consecvent. Contează mai mult decât ar părea: Supabase e în `eu-west-2`, iar
+Vercel nu are regiune fixată în `vercel.json`, deci fiecare apel secvențial
+plătește probabil o latență de rețea mare, nu una locală.
+
+**2. Zero `loading.tsx` în tot proiectul.** Fără el, browserul stă pe ecranul
+vechi până se rezolvă *tot* lanțul de interogări — o pauză fără niciun semnal
+pare un blocaj, nu o încărcare. Adăugate patru: `/app/garage`,
+`/app/fleet/[spaceId]`, `/app/settings`, `/admin` (ăsta din urmă stă direct
+în `src/app/admin/`, nu într-un subdirector, ca `layout.tsx` — deci tab-urile
+— să rămână vizibile în timp ce se încarcă doar conținutul). Un singur
+`Skeleton.tsx` reutilizabil, dimensiuni calibrate pe structura reală a
+fiecărui ecran, ca apariția conținutului adevărat să nu sară layoutul.
+
+**3. `framer-motion` (~120 KB) încărcat pe landing și pe `/verificare` doar
+pentru un modal de succes.** `VerificationForm` → `Modal` → `motion/react`,
+sincron, pe cele mai vizitate pagini publice, pentru un ecran pe care
+majoritatea vizitatorilor nu-l ating la prima vizită. Extras
+`VerificationStartedModal` într-un fișier propriu, încărcat cu
+`next/dynamic({ ssr: false })` — apare doar după trimiterea reușită a
+formularului. Verificat pe build real: landing și `/verificare` au scăzut de
+la 589 KB la 471 KB JS, iar motion nu mai apare în niciun script încărcat la
+prima vizită.
+
+Aș reveni dacă: Apar și alte pagini publice cu formulare-modal similare —
+atunci merită un pattern reutilizabil de „modal lazy", nu o extragere
+punctuală de fiecare dată. Sau dacă se fixează o regiune Vercel apropiată de
+`eu-west-2` — atunci ipoteza despre latența transatlantică ar trebui
+reverificată cu măsurători reale (Vercel Analytics / PageSpeed Insights),
+nu doar dedusă din numărul de round-trip-uri.
