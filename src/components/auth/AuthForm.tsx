@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Car, CheckCircle2, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PENDING_ORG_COOKIE } from "@/lib/constants";
+import { PENDING_ORG_COOKIE, MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { signInAction, signUpAction, type AuthActionState } from "@/lib/actions/auth";
 
@@ -187,8 +187,18 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
               type="password"
               placeholder="••••••••"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
             />
+            {mode === "login" && (
+              <div className="-mt-2 text-right">
+                <Link
+                  href="/recuperare-parola"
+                  className="text-xs font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
+                >
+                  Ai uitat parola?
+                </Link>
+              </div>
+            )}
             {state?.error && (
               <p className="text-sm text-red-600" role="alert">
                 {state.error}

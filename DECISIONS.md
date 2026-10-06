@@ -775,3 +775,63 @@ vercel.json trebuie mutat odată cu ea, altfel reapare exact aceeași problemă,
 tăcut. Sau dacă apar utilizatori în afara Europei, caz în care merită
 comparat câștigul unei singure regiuni lângă DB cu cel al mai multor regiuni
 (disponibil doar pe planurile plătite).
+
+## D-030 · 2026-10 · Întărire de securitate: HSTS, CSP enforce, recuperare parolă, loguri
+
+Context: audit pe o listă de șase dimensiuni de securitate (validare input,
+secrete, abuz/boți, deployment & monitorizare, izolare date, autentificare).
+Patru erau deja acoperite din sesiunile anterioare — validarea Zod pe toate
+server-action-urile (D nedocumentat, `src/lib/validation/*`), secretele doar
+pe server (`.env*` în gitignore, nimic în `NEXT_PUBLIC_` în afară de valori
+public-safe), RLS pe toate tabelele (D-022) și rate limiting Upstash (F-02).
+Nu există upload de fișiere nicăieri (produsul nu stochează acte), deci clasa
+„unsafe file upload" nu se aplică. Ce lipsea, reparat aici:
+
+**HSTS.** Header `Strict-Transport-Security: max-age=63072000; includeSubDomains;
+preload` în next.config.ts. Vercel servește oricum totul pe HTTPS, deci nu
+blochează nimic legitim; oprește un downgrade la http (MITM pe WiFi public care
+prinde prima cerere). `preload` de scos dacă se adaugă un domeniu custom care
+nu garantează HTTPS pe toate subdomeniile.
+
+**CSP promovat la enforce.** De la D-021 politica rula Report-Only. Trecută pe
+`Content-Security-Policy` (blochează efectiv) după ce suprafața externă a fost
+confirmată minimală: din browser aplicația atinge doar originea proprie
+(fetch pe /api/*) și Supabase (deja în connect-src); fonturile sunt
+self-hostate de next/font; linkurile CEDAM/RAR/CNAIR sunt `<a href>`, nu
+resurse. `report-uri`/`report-to` rămân active și pe enforce, ca o violare
+reală să apară în loguri, nu într-un bug raportat de un utilizator. Limita
+cunoscută (neschimbată): `script-src`/`style-src` au `'unsafe-inline'` fiindcă
+App Router injectează scripturi inline de hidratare și nu putem folosi nonce
+fără randare dinamică — deci CSP apără contra surselor externe de script, nu
+contra unui XSS inline.
+
+**Recuperare parolă.** Nu exista deloc — un cont cu parola uitată era pierdut.
+Flux în doi pași: `/recuperare-parola` cere adresa și cheamă
+`resetPasswordForEmail` (rate-limited 5/oră pe IP, răspuns mereu generic
+„dacă există un cont…" anti-enumerare); linkul duce prin /auth/callback (deja
+în redirect-urile permise Supabase, deci zero config nou) spre
+`/resetare-parola`, unde `updateUser({password})` rulează pe sesiunea de
+recuperare. Expirarea tokenului e cea standard Supabase (`otp_expiry`, 1h).
+Link „Ai uitat parola?" adăugat pe formularul de login.
+
+**Lungime minimă parolă → 8.** `MIN_PASSWORD_LENGTH` în constants.ts, folosit
+în formularele de signup/reset. Gardul autoritar rămâne Supabase; `config.toml`
+local urcat la 8 pentru paritate.
+
+**Loguri de securitate.** `src/lib/securityLog.ts` — o formă JSON constantă cu
+prefix `[sec]`, căutabilă în logurile Vercel. Emis pe login eșuat, limite de
+rată atinse (login/signup/reset) și cereri la cron fără secret. Fără PII:
+doar eveniment + IP + timp, ca un atac de credential stuffing să fie vizibil
+prin volum, nu prin ce adrese a încercat.
+
+Rămâne de făcut manual în Supabase Dashboard (nu se poate din cod/repo):
+- **Confirmare pe email = ON** în producție (codul tratează deja cazul
+  `confirm-email`, dar setarea trăiește în Dashboard).
+- **`minimum_password_length = 8`** în Dashboard, egal cu valoarea din cod.
+- CAPTCHA pe signup/login — exclus deliberat la cererea mea (ionuț), rămâne
+  rate limiting-ul ca protecție anti-bot.
+
+Aș reveni dacă: apare un raport CSP real în loguri după enforce (atunci fie
+adăugăm originea legitimă, fie revenim temporar la Report-Only), sau dacă se
+adaugă un provider de plată/analytics cu scripturi externe — caz în care
+`connect-src`/`script-src` trebuie extinse explicit, nu lărgite cu wildcard.

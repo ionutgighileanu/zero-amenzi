@@ -10,8 +10,15 @@ const withSerwist = withSerwistInit({
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Content Security Policy (F-09). Rulează deocamdată în Report-Only —
-// browserul raportează ce ar bloca, fără să blocheze efectiv.
+// Content Security Policy (F-09). De la D-030 rulează în mod ENFORCE —
+// browserul chiar blochează ce încalcă politica, nu doar raportează.
+//
+// Trecerea de la Report-Only la enforce s-a făcut după ce suprafața externă a
+// fost confirmată minimală: singurele origini pe care aplicația le atinge din
+// browser sunt ea însăși (fetch pe /api/*) și Supabase (REST + Auth https,
+// realtime wss). next/font servește fonturile Archivo/Inter self-hostat, nu
+// de la Google. Linkurile către CEDAM/RAR/CNAIR sunt `<a href>`, nu resurse
+// încărcate. Deci nimic din politica de mai jos nu blochează o resursă reală.
 //
 // Politica e un header static, nu per-request, așa că nu putem folosi nonce
 // pentru scripturi. Next.js App Router injectează în fiecare pagină scripturi
@@ -20,7 +27,9 @@ const isDev = process.env.NODE_ENV !== "production";
 // în forma asta apără împotriva injectării de *surse externe* de script, dar
 // NU împotriva unui XSS inline. Protecția completă cere nonce generat în
 // middleware, ceea ce forțează randare dinamică și ar strica optimizarea
-// statică a paginilor SEO — amânat deliberat.
+// statică a paginilor SEO — amânat deliberat. `report-uri`/`report-to` rămân
+// active și pe enforce: dacă o violare reală apare în producție, o vedem în
+// loguri în loc să aflăm dintr-un bug raportat de utilizator.
 const cspDirectives: Record<string, string[]> = {
   "default-src": ["'self'"],
   "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
@@ -87,8 +96,20 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy-Report-Only", value: cspHeaderValue },
+          { key: "Content-Security-Policy", value: cspHeaderValue },
           { key: "Report-To", value: reportToHeaderValue },
+          // HSTS (D-030): spune browserului să vorbească cu acest domeniu
+          // DOAR pe HTTPS pentru următorii doi ani, inclusiv subdomeniile.
+          // Vercel servește oricum totul pe HTTPS, deci nu blochează nimic
+          // legitim; ce oprește e un downgrade la http (ex. un atacator
+          // man-in-the-middle pe un WiFi public care încearcă să intercepteze
+          // prima cerere). `preload` semnalează intenția de a intra în lista
+          // HSTS a browserelor — de scos dacă se adaugă un domeniu custom care
+          // nu poate garanta HTTPS pe toate subdomeniile.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
           // Nu trimite URL-ul complet (inclusiv query string) către alte
           // origini la navigare — relevant fiindcă /verificare/[token] și
           // /verificare/status/[id] au identificatori neghicibili în URL,

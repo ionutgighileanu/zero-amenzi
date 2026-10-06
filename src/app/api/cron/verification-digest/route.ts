@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendVerificationDigest } from "@/lib/cron/verification-digest";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 /**
  * Apelat de Vercel Cron (vezi vercel.json). Grupează cererile noi de
@@ -20,6 +21,10 @@ export async function GET(request: Request) {
 
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    logSecurityEvent("cron_unauthorized", {
+      route: "verification-digest",
+      ip: request.headers.get("x-real-ip") ?? undefined,
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

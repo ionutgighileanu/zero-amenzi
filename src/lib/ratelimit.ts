@@ -82,6 +82,14 @@ const signupLimiter = makeLimiter(5, "1 h", "signup");
 const attachEmailLimiter = makeLimiter(10, "1 h", "attach-email");
 
 /**
+ * Cerere de resetare parolă: 5/oră. Fiecare declanșează un email de recuperare
+ * din cota Resend și, fără plafon, endpointul ar deveni o unealtă de inundat
+ * căsuța cuiva cu linkuri de reset (mail bombing). Răspunsul e oricum generic
+ * („dacă există un cont…"), deci limita nu scurge dacă emailul există.
+ */
+const passwordResetLimiter = makeLimiter(5, "1 h", "password-reset");
+
+/**
  * Statusul cererii de verificare: 240/oră. Ruta e publică și interogată prin
  * polling la fiecare VERIFICATION_POLL_SECONDS (60s) timp de până la 24h, deci
  * o pagină deschisă legitim consumă ~60 pe oră. Plafonul lasă loc pentru vreo
@@ -153,6 +161,10 @@ export async function limitSignup(ip: string) {
 
 export async function limitAttachEmail(ip: string) {
   return check(attachEmailLimiter, ip);
+}
+
+export async function limitPasswordReset(ip: string) {
+  return check(passwordResetLimiter, ip);
 }
 
 export async function limitCspReport(ip: string) {

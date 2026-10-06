@@ -29,6 +29,16 @@ export const SITE_URL = resolveSiteUrl();
  * Supabase cere confirmare pe email înainte de a avea o sesiune activă. */
 export const PENDING_ORG_COOKIE = "ad_pending_org";
 
+/**
+ * Lungimea minimă a parolei impusă în UI și în acțiunea de resetare (D-030).
+ *
+ * Gardul autoritar rămâne Supabase (Authentication → `minimum_password_length`
+ * în Dashboard pentru producție, `supabase/config.toml` pentru local) — asta e
+ * doar apărarea din față, ca omul să afle din formular, nu dintr-un 400 opac.
+ * Ține cele două valori sincronizate.
+ */
+export const MIN_PASSWORD_LENGTH = 8;
+
 /** Tipurile propuse în dropdown-ul „Alerte suplimentare" de pe un vehicul,
  * când spațiul n-are rânduri proprii în `alert_types`. AddDocForm adaugă
  * „Altul", deci lista e o comoditate, nu o constrângere. */

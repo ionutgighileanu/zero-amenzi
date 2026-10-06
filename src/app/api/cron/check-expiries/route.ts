@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkExpiries } from "@/lib/cron/check-expiries";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 /**
  * Apelat de Vercel Cron (vezi vercel.json, 08:00 UTC zilnic). Vercel adaugă
@@ -18,6 +19,10 @@ export async function GET(request: Request) {
 
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    logSecurityEvent("cron_unauthorized", {
+      route: "check-expiries",
+      ip: request.headers.get("x-real-ip") ?? undefined,
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -9,11 +9,13 @@ import { PENDING_ORG_COOKIE } from "@/lib/constants";
  * exista o intenție de firmă în așteptare, creează organizația abia acum.
  */
 /**
- * Destinația după autentificare. Acceptă doar căi din `/app/`: un `next`
+ * Destinația după autentificare. Allow-list strict: doar căi din `/app/` și
+ * pagina de resetare a parolei (unde ajunge linkul de recuperare). Un `next`
  * arbitrar ar transforma callback-ul într-un open redirect — un link de
  * phishing pe domeniul nostru care trimite omul pe alt site după login.
  */
 function safeNext(value: string | null): string {
+  if (value === "/resetare-parola") return value;
   return value && value.startsWith("/app/") ? value : "/app/garage";
 }
 
