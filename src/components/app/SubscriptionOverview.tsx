@@ -25,6 +25,9 @@ function spaceStatus(space: Space): { label: string; tone: string } {
     };
   }
   if (space.subscriptionStatus === "active") return { label: "Premium", tone: "text-brand" };
+  if (space.trialDenied) {
+    return { label: "Fără perioadă gratuită — folosită pe un cont anterior", tone: "text-red-700" };
+  }
   return { label: "Perioada gratuită a expirat", tone: "text-red-700" };
 }
 

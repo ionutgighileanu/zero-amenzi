@@ -24,6 +24,10 @@ type VehicleCardProps = {
   onDeleteDoc: (id: string, docId: string) => void;
   onDelete: (id: string) => void;
   onReverify: (v: Vehicle) => void;
+  onChangePlate: (
+    v: Vehicle,
+    plate: string
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
 };
 
 /**
@@ -42,6 +46,7 @@ export function VehicleCard({
   onDeleteDoc,
   onDelete,
   onReverify,
+  onChangePlate,
 }: VehicleCardProps) {
   const [adding, setAdding] = useState(false);
   const vStatus = vehicleStatus(v);
@@ -76,6 +81,7 @@ export function VehicleCard({
           onReverify={() => onReverify(v)}
           onUpgrade={() => onUpgrade(v)}
           onDelete={() => onDelete(v.id)}
+          onChangePlate={(plate) => onChangePlate(v, plate)}
         />
       </div>
 

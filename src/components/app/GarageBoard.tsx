@@ -14,6 +14,7 @@ import { vehicleStatus, type Vehicle } from "@/lib/vehicles";
 import {
   addVehicleAction,
   addVehicleDocAction,
+  changeVehiclePlateAction,
   deleteVehicleDocAction,
   requestReverificationAction,
   softDeleteVehicleAction,
@@ -23,6 +24,7 @@ import { startUpgradeAction } from "@/lib/actions/payments";
 import { errorMessage } from "@/lib/errorMessage";
 import type { Space } from "@/lib/spaces";
 import { canAddVehicle, vehicleAccess } from "@/lib/subscription";
+import { normalizePlate } from "@/lib/plate";
 
 type GarageBoardProps = {
   space: Space;
@@ -87,13 +89,33 @@ export function GarageBoard({
     }
   };
 
+  const changePlate = async (vehicle: Vehicle, plate: string) => {
+    const result = await changeVehiclePlateAction(vehicle.id, space.id, plate);
+    if (!result.ok) return result;
+    // Actele afișate erau ale numărului vechi: cardul trece în „în verificare".
+    setVehicles((list) =>
+      list.map((v) =>
+        v.id === vehicle.id
+          ? { ...v, plate: normalizePlate(plate), verificationPending: true }
+          : v
+      )
+    );
+    setNotice(result.message);
+    return { ok: true as const };
+  };
+
   const addBlocked = canAddVehicle(space, unpaidCount);
   const problemCount = vehicles.filter((v) => vehicleStatus(v) !== "valid").length;
   const pendingCount = vehicles.filter((v) => v.verificationPending).length;
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, verificationPending } = await addVehicleAction(space.id, plate, vin);
+      const result = await addVehicleAction(space.id, plate, vin);
+      if (!result.ok) {
+        setNotice(result.error);
+        return;
+      }
+      const { vehicle, verificationPending } = result;
       setVehicles((list) => [
         {
           id: vehicle.id,
@@ -203,6 +225,7 @@ export function GarageBoard({
               onDeleteDoc={deleteDoc}
               onDelete={softDelete}
               onReverify={reverify}
+              onChangePlate={changePlate}
             />
           ))}
         </AnimatePresence>

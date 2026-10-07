@@ -3,8 +3,16 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/database.types";
 import { fetchSpace, spacePath } from "@/lib/spaces";
-import { canAddVehicle, TRIAL_LIMIT_MESSAGE } from "@/lib/subscription";
+import {
+  canAddVehicle,
+  PLATE_CHANGES_PER_YEAR,
+  TRIAL_ALREADY_USED_MESSAGE,
+  TRIAL_LIMIT_MESSAGE,
+} from "@/lib/subscription";
+import { clientIp } from "@/lib/ratelimit";
+import { logSecurityEvent } from "@/lib/securityLog";
 import {
   PLATE_INPUT_MAX_LENGTH,
   PLATE_INVALID_MESSAGE,
@@ -14,6 +22,7 @@ import {
 import {
   addVehicleDocSchema,
   addVehicleSchema,
+  changePlateSchema,
   deleteVehicleDocSchema,
   vehicleByIdSchema,
 } from "@/lib/validation/vehicles";
@@ -34,7 +43,16 @@ function subscriptionErrorMessage(dbMessage: string): string | null {
     return TRIAL_LIMIT_MESSAGE;
   }
   if (dbMessage.includes("plate_trial_already_used")) {
-    return "Acest vehicul a beneficiat deja de perioada gratuită. Fă upgrade la Premium (12 lei/an).";
+    return "Acest număr de înmatriculare a beneficiat deja de perioada gratuită. Fă upgrade la Premium (12 lei/an).";
+  }
+  if (dbMessage.includes("vin_trial_already_used")) {
+    return "Această mașină (aceeași serie de șasiu) a beneficiat deja de perioada gratuită. Dacă doar i s-a schimbat numărul, folosește „Schimbă numărul de înmatriculare” din meniul vehiculului. Altfel, fă upgrade la Premium (12 lei/an).";
+  }
+  if (dbMessage.includes("trial_already_used_by_email")) {
+    return TRIAL_ALREADY_USED_MESSAGE;
+  }
+  if (dbMessage.includes("vin_invalid")) {
+    return "Seria de șasiu (VIN) are 17 caractere — litere și cifre, fără I, O, Q.";
   }
   if (dbMessage.includes("space_expired") || dbMessage.includes("trial_expired")) {
     return "Perioada gratuită de 1 an a expirat. Fă upgrade la Premium ca să adaugi vehicule.";
@@ -79,17 +97,35 @@ async function insertVerificationRequest(
   return error;
 }
 
-export async function addVehicleAction(spaceId: string, plate: string, vin: string) {
+type VehicleRow = Database["public"]["Tables"]["vehicles"]["Row"];
+
+export type AddVehicleResult =
+  | { ok: true; vehicle: VehicleRow; verificationPending: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Întoarce rezultat în loc să arunce: în producție Next.js înlocuiește
+ * mesajul erorilor aruncate din Server Actions cu un text generic, iar aici
+ * mesajul e chiar răspunsul pentru om („mașina a avut deja trial — schimbă
+ * numărul din meniu").
+ */
+export async function addVehicleAction(
+  spaceId: string,
+  plate: string,
+  vin: string
+): Promise<AddVehicleResult> {
   // Fail-fast pe lungime, înaintea oricărei procesări: schema ar fi tăiat
   // tăcut la 32, dar un input de 5 000 de caractere nu e o greșeală de
   // tastare, e cineva care sare peste UI.
-  if (plate.length > PLATE_INPUT_MAX_LENGTH) throw new Error(PLATE_INVALID_MESSAGE);
+  if (plate.length > PLATE_INPUT_MAX_LENGTH) return { ok: false, error: PLATE_INVALID_MESSAGE };
 
-  const input = addVehicleSchema.parse({ spaceId, plate, vin });
+  const parsed = addVehicleSchema.safeParse({ spaceId, plate, vin });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const input = parsed.data;
   const supabase = await createClient();
 
   const space = await fetchSpace(supabase, input.spaceId);
-  if (!space) throw new Error("Spațiul nu există sau nu ai acces la el.");
+  if (!space) return { ok: false, error: "Spațiul nu există sau nu ai acces la el." };
 
   // Garaj personal = plăcuță RO strictă, aceeași regulă ca la verificarea
   // publică. Flotele rămân permisive (camioane înmatriculate în afara RO).
@@ -98,7 +134,7 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
     space.kind === "personal" &&
     (input.plate.length > RO_PLATE_INPUT_MAX_LENGTH || !RO_PLATE_REGEX.test(input.plate))
   ) {
-    throw new Error(PLATE_INVALID_MESSAGE);
+    return { ok: false, error: PLATE_INVALID_MESSAGE };
   }
 
   // Verificare înainte de insert, pentru un mesaj clar. Nu înlocuiește
@@ -114,7 +150,7 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
     .or(`paid_until.is.null,paid_until.lte.${new Date().toISOString()}`);
 
   const allowed = canAddVehicle(space, unpaidCount ?? 0);
-  if (!allowed.allowed) throw new Error(allowed.reason);
+  if (!allowed.allowed) return { ok: false, error: allowed.reason };
 
   const { data: vehicle, error } = await supabase
     .from("vehicles")
@@ -127,10 +163,16 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
     .single();
 
   if (error) {
+    // Plăcuța, VIN-ul sau emailul au mai avut trial (de obicei: cont nou
+    // pentru aceeași mașină). Fără date în log — doar IP și moment.
+    if (/plate_trial_already_used|vin_trial_already_used|trial_already_used_by_email/.test(error.message)) {
+      logSecurityEvent("trial_reuse_blocked", { ip: await clientIp() });
+    }
     const friendly = subscriptionErrorMessage(error.message);
-    throw new Error(friendly ?? "Nu am putut adăuga vehiculul.");
+    if (!friendly) console.error("Adăugarea vehiculului a eșuat:", error);
+    return { ok: false, error: friendly ?? "Nu am putut adăuga vehiculul." };
   }
-  if (!vehicle) throw new Error("Nu am putut adăuga vehiculul.");
+  if (!vehicle) return { ok: false, error: "Nu am putut adăuga vehiculul." };
 
   // Documentele NU se inventează. Vehiculul intră în fluxul de verificare
   // (D-023): cererea ajunge în digestul adminului, iar datele reale se scriu
@@ -146,7 +188,7 @@ export async function addVehicleAction(spaceId: string, plate: string, vin: stri
   }
 
   revalidatePath(spacePath(space));
-  return { vehicle, verificationPending: !requestError };
+  return { ok: true, vehicle, verificationPending: !requestError };
 }
 
 export async function softDeleteVehicleAction(id: string, spaceId: string) {
@@ -244,5 +286,70 @@ export async function requestReverificationAction(
   return {
     ok: true,
     message: `Verificăm din nou actele pentru ${vehicle.plate}. Te anunțăm când sunt confirmate.`,
+  };
+}
+
+const PLATE_CHANGE_ERRORS: Record<string, string> = {
+  plate_change_limit: `Ai atins limita de ${PLATE_CHANGES_PER_YEAR} schimbări de număr pe an pentru acest vehicul. Scrie-ne dacă e o situație specială.`,
+  plate_unchanged: "Acesta e deja numărul vehiculului.",
+  plate_invalid: PLATE_INVALID_MESSAGE,
+  plate_trial_already_used:
+    "Acest număr a beneficiat deja de perioada gratuită pe alt vehicul. Fă upgrade la Premium (12 lei/an).",
+  vehicle_not_found: "Vehiculul nu există sau nu ai drept să-l modifici.",
+};
+
+/**
+ * Schimbarea numărului de înmatriculare (reînmatriculare, număr personalizat).
+ * Vehiculul — și deci VIN-ul și trialul lui — rămâne același; doar plăcuța se
+ * schimbă. Plafonul anual stă în DB (`change_vehicle_plate`), ca să nu poată
+ * fi ocolit apelând REST-ul direct (D-033).
+ *
+ * Actele afișate erau ale numărului vechi, deci pornim o verificare nouă.
+ */
+export async function changeVehiclePlateAction(
+  id: string,
+  spaceId: string,
+  plate: string
+): Promise<ReverifyResult> {
+  if (plate.length > PLATE_INPUT_MAX_LENGTH) return { ok: false, error: PLATE_INVALID_MESSAGE };
+
+  const parsed = changePlateSchema.safeParse({ id, spaceId, plate });
+  if (!parsed.success) return { ok: false, error: PLATE_INVALID_MESSAGE };
+
+  const supabase = await createClient();
+  const space = await fetchSpace(supabase, parsed.data.spaceId);
+  if (!space) return { ok: false, error: "Spațiul nu există sau nu ai acces la el." };
+
+  if (
+    space.kind === "personal" &&
+    (parsed.data.plate.length > RO_PLATE_INPUT_MAX_LENGTH || !RO_PLATE_REGEX.test(parsed.data.plate))
+  ) {
+    return { ok: false, error: PLATE_INVALID_MESSAGE };
+  }
+
+  const { error } = await supabase.rpc("change_vehicle_plate", {
+    p_vehicle_id: parsed.data.id,
+    p_new_plate: parsed.data.plate,
+  });
+
+  if (error) {
+    const code = Object.keys(PLATE_CHANGE_ERRORS).find((c) => error.message.includes(c));
+    if (!code) console.error("Schimbarea numărului a eșuat:", error);
+    return {
+      ok: false,
+      error: code ? PLATE_CHANGE_ERRORS[code] : "Nu am putut schimba numărul. Încearcă din nou.",
+    };
+  }
+
+  const requestError = await insertVerificationRequest(supabase, {
+    id: parsed.data.id,
+    plate: parsed.data.plate,
+  });
+  if (requestError) console.error("Număr schimbat, dar cererea de verificare a eșuat:", requestError);
+
+  revalidatePath(spacePath(space));
+  return {
+    ok: true,
+    message: `Numărul a fost schimbat în ${parsed.data.plate}. Verificăm actele pe numărul nou.`,
   };
 }

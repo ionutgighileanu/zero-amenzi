@@ -118,8 +118,10 @@ export function AddVehicleModal({
           required
           minLength={17}
           maxLength={17}
+          pattern="[A-HJ-NPR-Z0-9]{17}"
+          title="17 caractere — litere și cifre, fără I, O, Q"
           value={vin}
-          onChange={(e) => setVin(e.target.value.toUpperCase())}
+          onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}

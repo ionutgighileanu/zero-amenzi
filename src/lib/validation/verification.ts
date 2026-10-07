@@ -65,7 +65,7 @@ export const attachVerificationEmailSchema = z.object({
 
 /**
  * Completarea rezultatului de către admin. Acțiunea e deja gate-uită pe
- * ADMIN_EMAIL, iar DB-ul are CHECK pe valorile rezultatului — schema e
+ * rolul de admin (D-032), iar DB-ul are CHECK pe valorile rezultatului — schema e
  * pentru consistență cu restul acțiunilor (F-07) și pentru un mesaj clar în
  * loc de un eșec opac de update.
  */

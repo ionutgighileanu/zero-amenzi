@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Settings, Trash2, Zap } from "lucide-react";
+import { PenLine, RefreshCw, Settings, Trash2, Zap } from "lucide-react";
+import { ChangePlateForm } from "@/components/app/ChangePlateForm";
 
 type VehicleMenuProps = {
   plate: string;
@@ -10,15 +11,24 @@ type VehicleMenuProps = {
   onReverify: () => void;
   onUpgrade: () => void;
   onDelete: () => void;
+  onChangePlate: (plate: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 };
 
 const ITEM =
   "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700";
 
 /** Meniul ⚙ de pe cardul vehiculului: setările care nu au loc pe card. */
-export function VehicleMenu({ plate, paid, onReverify, onUpgrade, onDelete }: VehicleMenuProps) {
+export function VehicleMenu({
+  plate,
+  paid,
+  onReverify,
+  onUpgrade,
+  onDelete,
+  onChangePlate,
+}: VehicleMenuProps) {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [changingPlate, setChangingPlate] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Se închide la click în afara lui și la Escape, ca orice meniu.
@@ -41,6 +51,7 @@ export function VehicleMenu({ plate, paid, onReverify, onUpgrade, onDelete }: Ve
   const close = () => {
     setOpen(false);
     setConfirmDelete(false);
+    setChangingPlate(false);
   };
 
   return (
@@ -48,6 +59,7 @@ export function VehicleMenu({ plate, paid, onReverify, onUpgrade, onDelete }: Ve
       <button
         onClick={() => {
           setConfirmDelete(false);
+          setChangingPlate(false);
           setOpen((o) => !o);
         }}
         aria-label={`Setări ${plate}`}
@@ -63,7 +75,18 @@ export function VehicleMenu({ plate, paid, onReverify, onUpgrade, onDelete }: Ve
           role="menu"
           className="absolute right-0 top-full mt-1 z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5"
         >
-          {confirmDelete ? (
+          {changingPlate ? (
+            <ChangePlateForm
+              currentPlate={plate}
+              strictRoPlate
+              onCancel={() => setChangingPlate(false)}
+              onSubmit={async (newPlate) => {
+                const result = await onChangePlate(newPlate);
+                if (result.ok) close();
+                return result;
+              }}
+            />
+          ) : confirmDelete ? (
             <div className="p-2">
               <p className="text-sm text-slate-700">
                 Ștergi <strong>{plate}</strong>? Ai 30 de secunde să anulezi.
@@ -98,6 +121,14 @@ export function VehicleMenu({ plate, paid, onReverify, onUpgrade, onDelete }: Ve
               >
                 <RefreshCw size={15} className="text-slate-400 shrink-0" aria-hidden />
                 Am reînnoit un act — verifică din nou
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => setChangingPlate(true)}
+                className={`${ITEM} text-slate-700 hover:bg-slate-50`}
+              >
+                <PenLine size={15} className="text-slate-400 shrink-0" aria-hidden />
+                Schimbă numărul de înmatriculare
               </button>
               {!paid && (
                 <button

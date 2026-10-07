@@ -26,6 +26,7 @@ export function mapSpaceRow(row: SpaceRow): Space {
     ownerId: row.owner_id,
     subscriptionStatus: row.subscription_status,
     trialEndsAt: row.trial_ends_at,
+    trialDenied: row.trial_denied,
   };
 }
 

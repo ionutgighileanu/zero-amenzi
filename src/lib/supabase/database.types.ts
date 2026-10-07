@@ -31,9 +31,10 @@ export type Database = {
           cui: string | null;
           subscription_status: "trialing" | "active" | "expired";
           trial_ends_at: string;
+          trial_denied: boolean;
           created_at: string;
         };
-        // subscription_status si trial_ends_at au INSERT revocat pentru
+        // subscription_status, trial_ends_at si trial_denied au INSERT revocat pentru
         // authenticated/anon (vezi migrarea 20260917100000) — valorile vin din
         // default-urile DB, deci nu se trimit de la client.
         Insert: {
@@ -101,9 +102,9 @@ export type Database = {
           deleted_at?: string | null;
           created_at?: string;
         };
+        // plate si vin nu se mai modifica direct (D-033): numarul se schimba
+        // prin change_vehicle_plate, VIN-ul e fix.
         Update: {
-          plate?: string;
-          vin?: string;
           model?: string | null;
           is_truck?: boolean;
           deleted_at?: string | null;
@@ -391,6 +392,19 @@ export type Database = {
     Functions: {
       attach_verification_email: {
         Args: { p_token: string; p_email: string };
+        Returns: null;
+      };
+      // Doar service_role (D-032) — EXECUTE revocat pentru anon/authenticated.
+      purge_soft_deleted: {
+        Args: { p_days?: number };
+        Returns: { drivers_deleted: number; vehicles_anonymized: number };
+      };
+      is_app_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      change_vehicle_plate: {
+        Args: { p_vehicle_id: string; p_new_plate: string };
         Returns: null;
       };
     };

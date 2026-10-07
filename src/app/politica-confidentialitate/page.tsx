@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage title="Politica de confidențialitate" updatedAt="16 septembrie 2026">
+    <LegalPage title="Politica de confidențialitate" updatedAt="7 octombrie 2026">
       <LegalSection title="Cine suntem">
         <p>
           Zero Amenzi este un serviciu care verifică valabilitatea actelor auto (ITP, RCA,
@@ -118,9 +118,27 @@ export default function PrivacyPolicyPage() {
           items={[
             "Cererile de verificare publică: păstrate maximum 12 luni, cât să rămână funcțional linkul de rezultat, apoi șterse automat. Poți cere ștergerea lor și mai devreme, oricând.",
             "Datele contului și ale vehiculelor: cât timp contul există. Ștergerea contului le elimină.",
-            "Un vehicul sau șofer șters rămâne recuperabil pentru scurt timp (funcția de anulare a ștergerii), apoi nu mai apare nicăieri în aplicație.",
+            "Un șofer șters dispare imediat din aplicație și e șters definitiv din baza de date după 30 de zile, împreună cu atestatele lui.",
+            "Un vehicul șters dispare imediat din aplicație. După 30 de zile îi ștergem definitiv documentele, cererile de verificare și istoricul alertelor, iar numărul de înmatriculare, seria de șasiu și modelul sunt eliminate. Rămâne doar o evidență anonimă că în cont a existat un vehicul în perioada gratuită, necesară pentru limita de vehicule gratuite.",
+            <>
+              <strong>Evidența perioadelor gratuite folosite</strong> — păstrăm, chiar și după
+              ștergerea vehiculului sau a contului: numărul de înmatriculare și seria de șasiu
+              (VIN) ale fiecărui vehicul care a beneficiat de perioada gratuită, plus o amprentă
+              criptografică a adresei de email a fiecărui cont (nu adresa în sine — din amprentă
+              adresa nu poate fi citită, doar recunoscută dacă e folosită din nou). Nu sunt
+              legate de alte date despre tine. Temeiul este interesul nostru legitim de a preveni
+              abuzul: fără ele, aceeași persoană sau aceeași mașină ar putea primi perioada
+              gratuită la nesfârșit, prin conturi noi.
+            </>,
           ]}
         />
+      </LegalSection>
+
+      <LegalSection title="Vârsta minimă">
+        <p>
+          Serviciul nu este destinat persoanelor sub 18 ani și nu colectăm cu bună știință date
+          despre ele.
+        </p>
       </LegalSection>
 
       <LegalSection title="Drepturile tale (GDPR)">

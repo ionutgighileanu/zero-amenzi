@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Truck } from "lucide-react";
+import { PenLine, Shield, Truck } from "lucide-react";
+import { ChangePlateForm } from "@/components/app/ChangePlateForm";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
@@ -19,6 +20,10 @@ type VehicleDetailProps = {
   onAddDoc: (id: string, doc: Pick<VehicleDoc, "type" | "expires">) => void;
   onDeleteDoc: (id: string, docId: string) => void;
   onDelete: (id: string) => void;
+  onChangePlate?: (
+    v: Vehicle,
+    plate: string
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
   onClose: () => void;
   /** Pornește cu formularul de alertă deschis — când omul a apăsat
    * „Adaugă" pe card, nu trebuie să-l mai caute o dată în modal. */
@@ -38,10 +43,12 @@ export function VehicleDetail({
   onAddDoc,
   onDeleteDoc,
   onDelete,
+  onChangePlate,
   onClose,
   startAdding = false,
 }: VehicleDetailProps) {
   const [adding, setAdding] = useState(startAdding);
+  const [changingPlate, setChangingPlate] = useState(false);
   const presets = [...new Set([...alertTypes, "Altul"])];
 
   const header = (
@@ -90,6 +97,32 @@ export function VehicleDetail({
           <Shield size={16} className="mr-2" aria-hidden /> Ofertă CASCO
         </Button>
       </div>
+
+      {onChangePlate && (
+        <div className="px-5 pb-2">
+          {changingPlate ? (
+            <div className="border border-slate-200 rounded-xl">
+              <ChangePlateForm
+                currentPlate={vehicle.plate}
+                strictRoPlate={false}
+                onCancel={() => setChangingPlate(false)}
+                onSubmit={async (plate) => {
+                  const result = await onChangePlate(vehicle, plate);
+                  if (result.ok) setChangingPlate(false);
+                  return result;
+                }}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setChangingPlate(true)}
+              className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            >
+              <PenLine size={15} aria-hidden /> Schimbă numărul de înmatriculare
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="px-5 pb-4">
         <DeleteConfirm

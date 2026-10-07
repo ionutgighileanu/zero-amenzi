@@ -36,11 +36,20 @@ export const TRIAL_LIMIT_MESSAGE =
  * (`spaces.trial_ends_at default now() + interval '1 year'`). */
 export const TRIAL_DURATION_LABEL = "1 an";
 
+/** Spațiu creat fără perioadă gratuită: emailul a mai avut un cont (D-033). */
+export const TRIAL_ALREADY_USED_MESSAGE =
+  "Ai mai avut un cont cu acest email, deci perioada gratuită a fost deja folosită. Trece la Premium pentru a adăuga vehicule.";
+
+/** Câte schimbări de număr de înmatriculare are un vehicul în 12 luni (D-033).
+ * Oglindește plafonul din `change_vehicle_plate` (migrarea 20261007120000). */
+export const PLATE_CHANGES_PER_YEAR = 2;
+
 /** Forma minimă de spațiu de care au nevoie regulile — orice obiect care o
  * satisface merge, ca să nu legăm logica de forma exactă a rândului din DB. */
 export type SubscribableSpace = {
   subscriptionStatus: SubscriptionStatus;
   trialEndsAt: string;
+  trialDenied?: boolean;
 };
 
 /**
@@ -99,6 +108,9 @@ export function canAddVehicle(
       allowed: false,
       reason: "Perioada gratuită de 1 an a expirat. Fă upgrade la Premium ca să adaugi vehicule.",
     };
+  }
+  if (space.subscriptionStatus === "trialing" && space.trialDenied) {
+    return { allowed: false, reason: TRIAL_ALREADY_USED_MESSAGE };
   }
   if (space.subscriptionStatus === "trialing" && !isTrialActive(space, now)) {
     return {

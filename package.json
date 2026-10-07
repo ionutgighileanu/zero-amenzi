@@ -10,6 +10,7 @@
     "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
+    "@figma/code-connect": "^2.0.1",
     "@serwist/next": "^9.5.12",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",

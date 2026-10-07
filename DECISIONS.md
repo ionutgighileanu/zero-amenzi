@@ -882,3 +882,102 @@ DE FĂCUT ÎNAINTE DE A PORNI PLĂȚILE (nefăcut acum, decizii de business):
   dacă serviciul nu a început deja la cererea expresă a clientului.
 - **Semnătura webhook**: implementează verificarea HMAC reală în providerul de
   plată (acum e stub care respinge tot cu 400 — arhitectura e corectă).
+
+## D-032 · 2026-10 · Rol de admin în app_metadata, curățarea datelor șterse, vârsta minimă
+
+Context: auditul „hacked / sued" a găsit trei lucruri rezolvabile acum.
+
+**Rolul de admin.** Admin era „cine are emailul X" — în 3 verificări din cod
+și 6 policy-uri RLS. Orice cont care ajungea să aibă adresa (cont șters și
+recreat de altcineva, confirmare email oprită) devenea admin peste toate
+datele. Acum rolul stă în `app_metadata.role = 'admin'`, pe care doar
+service_role îl poate scrie (spre deosebire de `user_metadata`). Cod:
+`isAdmin()` în src/lib/admin.ts; DB: `public.is_app_admin()` în cele 6
+policy-uri. Migrația refuză să ruleze dacă contul de admin nu există, ca să nu
+lase panoul fără niciun admin. `ADMIN_EMAIL` rămâne doar adresă de contact.
+Rolul intră în JWT la următoarea autentificare — după aplicare, adminul se
+reloghează o dată.
+
+**Curățarea datelor soft-deleted** (GDPR: ștergere + limitarea stocării).
+„Șterge" seta doar `deleted_at` și rândul rămânea pentru totdeauna. Funcția
+SQL `purge_soft_deleted(30)`, apelată zilnic din cronul check-expiries:
+- **șoferii** șterși de peste 30 de zile → ștergere definitivă (nume + telefon
+  ale unei terțe persoane; atestatele cad prin cascade).
+- **vehiculele** → anonimizare, NU ștergere: plafonul de trial (D-024) numără
+  vehiculele neplătite inclusiv cele șterse, deci ștergerea definitivă ar fi
+  permis „șterg mașina gratuită, aștept 30 de zile, adaug alta gratis".
+  Plăcuța devine `STERS`, VIN-ul `-`, modelul null; documentele, cererile de
+  verificare (plăcuță + email) și istoricul alertelor se șterg definitiv.
+
+Capcană evitată: triggerul de schimbare a plăcuței verifică și consumă
+`plate_trials` la orice redenumire într-un spațiu în trial. Anonimizarea ar fi
+scris `STERS` în `plate_trials`, apoi ar fi picat la al doilea vehicul. Fix:
+un flag local tranzacției (`app.purging_soft_deleted`), setat doar de funcția
+de purge — clienții nu-l pot seta, PostgREST nu expune `set_config`. EXECUTE
+pe funcție doar pentru service_role.
+
+`plate_trials` nu se atinge (anti-abuz: aceeași mașină nu primește al doilea
+trial, nici prin cont nou). Era păstrat deja și după ștergerea contului, dar
+nedeclarat — acum e în politica de confidențialitate, ca interes legitim.
+Încercările blocate se loghează ca `[sec] trial_reuse_blocked` (doar IP + moment).
+
+**Vârsta minimă 18 ani**: secțiune în /termeni, bifa de la signup („Am cel
+puțin 18 ani și sunt de acord…") și o propoziție în politică. 18, nu 16
+(vârsta de consimțământ GDPR în România), fiindcă Premium e un contract.
+
+Verificat în producție după aplicare: 1 cont cu rolul admin, 6 policy-uri pe
+`is_app_admin`, 0 policy-uri rămase pe email, `purge_soft_deleted` executabilă
+doar de service_role, rulare de probă fără efecte (0 rânduri eligibile).
+Neverificat pe date reale: ramura de anonimizare — niciun vehicul nu era încă
+șters de peste 30 de zile.
+
+Aș reveni dacă: apare nevoia unui al doilea admin (atunci rolul se acordă tot
+din SQL/service_role, nu din UI), sau dacă regula de trial se schimbă astfel
+încât vehiculele șterse să nu mai conteze — atunci anonimizarea poate deveni
+ștergere definitivă.
+
+## D-033 · 2026-10 · Perioada gratuită o singură dată per email și per mașină (VIN)
+
+Problema: singura memorie anti-abuz era `plate_trials` (per plăcuță). Rămâneau
+două căi de a lua din nou anul gratuit: (1) șterg contul, îmi fac altul cu
+același email și adaug altă mașină; (2) aceeași mașină pe alt cont, cu alt
+număr de înmatriculare.
+
+Reguli noi (migrarea 20261007120000):
+
+- **Email.** `email_trials` ține amprenta SHA-256 a emailului normalizat
+  (litere mici, fără `+etichetă`, fără puncte la Gmail) — nu adresa. Rândul
+  supraviețuiește ștergerii contului. Un cont nou cu un email deja văzut
+  primește spații cu `trial_denied = true` și trialul expirat din start:
+  poate folosi aplicația, dar orice vehicul cere Premium. Se aplică și
+  flotelor create ulterior, și adresei noi la schimbarea emailului. Conturile
+  existente au fost marcate ca „au primit deja trialul cu emailul lor" — nu
+  sunt penalizate.
+- **VIN.** `vin_trials` ține VIN-urile care au primit trial. În trial, VIN-ul
+  trebuie să fie real (17 caractere, fără I/O/Q — altfel regula s-ar ocoli
+  scriind orice) și nefolosit. Același VIN nu mai intră în trial, indiferent
+  de plăcuță sau cont.
+- **Schimbarea numărului.** Reînmatricularea sau numărul personalizat se
+  fac din meniul vehiculului („Schimbă numărul de înmatriculare"), prin
+  `change_vehicle_plate`: mașina își păstrează trialul, iar actele se
+  re-verifică pe numărul nou. **Plafon: 2 schimbări în 12 luni per
+  vehicul** — o reînmatriculare reală e rară; 2 lasă loc pentru o greșeală.
+  Numărul nou consumă `plate_trials` (cel vechi nu se eliberează). Clientul
+  nu mai poate modifica direct `plate` sau `vin`; VIN-ul e fix.
+
+Efect secundar reparat: `addVehicleAction` arunca erori, iar în producție
+Next.js le înlocuiește textul cu un mesaj generic — deci omul nu vedea de ce
+a fost refuzat. Acum întoarce rezultat, ca re-verificarea.
+
+Verificat pe producție, într-o tranzacție anulată, înainte de aplicare: 15
+scenarii (email refolosit cu altă scriere Gmail, același VIN cu alt număr,
+VIN fals, același număr, străin care schimbă numărul, a 3-a schimbare în an,
+drepturi de coloană). După aplicare: 4 emailuri și 3 VIN-uri existente
+înregistrate, 0 spații existente fără trial.
+
+Limite asumate: cine folosește un email complet nou și o mașină nouă primește
+trial — e un client nou legitim din perspectiva sistemului. Un VIN greșit la
+adăugare nu se mai poate corecta din aplicație (doar de admin, în SQL).
+
+Aș reveni dacă: apar cereri legitime de peste 2 schimbări pe an, sau dacă
+plafonul de 2 se dovedește prea strâns pentru flote.

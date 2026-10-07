@@ -33,6 +33,7 @@ import { minDays, vehicleStatus, type Driver, type Vehicle } from "@/lib/vehicle
 import {
   addVehicleAction,
   addVehicleDocAction,
+  changeVehiclePlateAction,
   deleteVehicleDocAction,
   softDeleteVehicleAction,
   undoDeleteVehicleAction,
@@ -48,6 +49,7 @@ import {
 import type { Space } from "@/lib/spaces";
 import { canAddVehicle, vehicleAccess, VEHICLE_PRICE_RON_PER_YEAR } from "@/lib/subscription";
 import { errorMessage } from "@/lib/errorMessage";
+import { normalizePlate } from "@/lib/plate";
 
 type SortCol = "urgency" | "rca" | "itp" | "rovinieta" | "tahograf";
 type Sort = { col: SortCol; dir: "asc" | "desc" };
@@ -190,7 +192,12 @@ export function FleetBoard({
 
   const addVehicle = async (plate: string, vin: string) => {
     try {
-      const { vehicle, verificationPending } = await addVehicleAction(space.id, plate, vin);
+      const result = await addVehicleAction(space.id, plate, vin);
+      if (!result.ok) {
+        setNotice(result.error);
+        return;
+      }
+      const { vehicle, verificationPending } = result;
       setVehicles((list) => [
         {
           id: vehicle.id,
@@ -215,6 +222,20 @@ export function FleetBoard({
       console.error(err);
       setNotice(errorMessage(err));
     }
+  };
+
+  const changePlate = async (vehicle: Vehicle, plate: string) => {
+    const result = await changeVehiclePlateAction(vehicle.id, space.id, plate);
+    if (!result.ok) return result;
+    setVehicles((list) =>
+      list.map((v) =>
+        v.id === vehicle.id
+          ? { ...v, plate: normalizePlate(plate), verificationPending: true }
+          : v
+      )
+    );
+    setNotice(result.message);
+    return { ok: true as const };
   };
 
   const addVehicleDoc = async (id: string, doc: { type: string; expires: string }) => {
@@ -657,6 +678,7 @@ export function FleetBoard({
           onAddDoc={addVehicleDoc}
           onDeleteDoc={deleteVehicleDoc}
           onDelete={softDeleteVehicle}
+          onChangePlate={changePlate}
           onClose={() => setDetailVehicleId(null)}
           startAdding={detailStartsAdding}
         />

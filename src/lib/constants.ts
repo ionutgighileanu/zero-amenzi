@@ -53,6 +53,13 @@ export const MIN_PASSWORD_LENGTH = 8;
  * dispar. Ținut egal cu textul din politica de confidențialitate. */
 export const VERIFICATION_RETENTION_DAYS = 365;
 
+/**
+ * După câte zile un vehicul sau șofer șters (soft-delete) e curățat (D-032):
+ * șoferii se șterg definitiv, vehiculele se anonimizează. „Anulează" din UI
+ * durează 30 de secunde; cele 30 de zile lasă loc unei restaurări manuale cerute
+ * de client. Ținut egal cu textul din politica de confidențialitate. */
+export const SOFT_DELETE_RETENTION_DAYS = 30;
+
 /** Tipurile propuse în dropdown-ul „Alerte suplimentare" de pe un vehicul,
  * când spațiul n-are rânduri proprii în `alert_types`. AddDocForm adaugă
  * „Altul", deci lista e o comoditate, nu o constrângere. */
@@ -161,9 +168,10 @@ export const NOTIFICATION_THRESHOLDS = [30, 15, 2, 0] as const;
 /** Plafon zilnic de email-uri pe planul gratuit Resend (100/zi). */
 export const EMAIL_DAILY_LIMIT = 100;
 
-/** Singurul cont care poate completa cererile de verificare publică
- * (wizard-of-oz, D-010). Hardcodat pentru MVP — vezi migrarea
- * verification_requests, unde e oglindit în RLS. */
+/** Adresa de CONTACT a operatorului: linkuri mailto, destinatarul digestului
+ * de cereri, subiectul VAPID. NU mai dă drepturi de admin — de la D-032 rolul
+ * stă în `app_metadata.role` (vezi `isAdmin` în src/lib/admin.ts și
+ * `public.is_app_admin()` în DB). */
 export const ADMIN_EMAIL = "ionut.gighileanu@gmail.com";
 
 /** Tri-state pe care adminul îl atribuie fiecărui document verificat. */

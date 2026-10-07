@@ -82,9 +82,10 @@ export async function signOutEverywhereAction() {
  * notificările.
  *
  * Ce rămâne, deliberat:
- *   - plate_trials: plăcuțele își păstrează trialul consumat (first_space_id
- *     devine null). Altfel ștergerea contului ar fi o cale de a relua anul
- *     gratuit pentru aceeași mașină.
+ *   - plate_trials, vin_trials, email_trials: plăcuța, VIN-ul și amprenta
+ *     emailului își păstrează trialul consumat (legătura cu contul devine
+ *     null). Altfel ștergerea contului ar fi o cale de a relua anul gratuit
+ *     (D-033).
  *   - cererile publice de verificare: user_id devine null, iar emailul îl
  *     ștergem noi explicit mai jos, ca să nu rămână date personale legate de
  *     un cont care nu mai există.
