@@ -75,7 +75,10 @@ export async function signUpAction(
   // înregistrăm cu timestamp în metadata userului — dovada consimțământului,
   // legată de cont. Gardul din față e `required` pe input, ăsta e cel real.
   if (formData.get("acceptTerms") !== "on") {
-    return { error: "Trebuie să accepți termenii și politica de confidențialitate." };
+    return {
+      error:
+        "Trebuie să confirmi că ai cel puțin 18 ani și să accepți termenii și politica de confidențialitate.",
+    };
   }
 
   if (accountType === "B2B" && !orgName) {

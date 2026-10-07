@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { checkExpiries, purgeOldVerificationRequests } from "@/lib/cron/check-expiries";
+import {
+  checkExpiries,
+  purgeOldVerificationRequests,
+  purgeSoftDeleted,
+  type SoftDeletePurgeResult,
+} from "@/lib/cron/check-expiries";
 import { logSecurityEvent } from "@/lib/securityLog";
 
 /**
@@ -37,7 +42,14 @@ export async function GET(request: Request) {
     } catch (err) {
       console.error("purge verification_requests a eșuat:", err);
     }
-    return NextResponse.json({ ok: true, ...result, purged });
+    // Curățarea vehiculelor/șoferilor șterși (D-032), la fel izolată.
+    let softDeleted: SoftDeletePurgeResult = { driversDeleted: 0, vehiclesAnonymized: 0 };
+    try {
+      softDeleted = await purgeSoftDeleted();
+    } catch (err) {
+      console.error("purge_soft_deleted a eșuat:", err);
+    }
+    return NextResponse.json({ ok: true, ...result, purged, ...softDeleted });
   } catch (err) {
     console.error("check-expiries a eșuat:", err);
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });

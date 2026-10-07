@@ -5,6 +5,7 @@ import { sendPushAlert } from "@/lib/push/send-alert";
 import {
   NOTIFICATION_THRESHOLDS,
   EMAIL_DAILY_LIMIT,
+  SOFT_DELETE_RETENTION_DAYS,
   VERIFICATION_RETENTION_DAYS,
 } from "@/lib/constants";
 import { todayInRomania } from "@/lib/status";
@@ -79,6 +80,29 @@ export async function purgeOldVerificationRequests(): Promise<number> {
     return 0;
   }
   return data?.length ?? 0;
+}
+
+export type SoftDeletePurgeResult = { driversDeleted: number; vehiclesAnonymized: number };
+
+/**
+ * Curăță vehiculele și șoferii șterși de peste SOFT_DELETE_RETENTION_DAYS
+ * (D-032): șoferii dispar definitiv, vehiculele se anonimizează (plafonul de
+ * trial le numără, vezi migrarea 20261007100000). Toată logica stă în
+ * funcția SQL `purge_soft_deleted`, într-o singură tranzacție — inclusiv
+ * excepția pentru triggerul de plăcuță, care nu poate fi declanșată din
+ * afara ei. Nu aruncă: o eroare aici nu trebuie să blocheze alertele.
+ */
+export async function purgeSoftDeleted(): Promise<SoftDeletePurgeResult> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc("purge_soft_deleted", {
+    p_days: SOFT_DELETE_RETENTION_DAYS,
+  });
+
+  if (error || !data) {
+    console.error("[cron] purge_soft_deleted a eșuat:", error);
+    return { driversDeleted: 0, vehiclesAnonymized: 0 };
+  }
+  return { driversDeleted: data.drivers_deleted, vehiclesAnonymized: data.vehicles_anonymized };
 }
 
 /**

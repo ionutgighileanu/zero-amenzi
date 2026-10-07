@@ -64,7 +64,9 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
     // La înscrierea cu Google acceptarea termenilor e obligatorie, exact ca pe
     // calea cu email — altfel butonul Google ar fi o portiță de ocolire.
     if (mode === "signup" && !acceptTerms) {
-      setGoogleError("Bifează acceptarea termenilor și a politicii de confidențialitate.");
+      setGoogleError(
+        "Bifează că ai cel puțin 18 ani și accepți termenii și politica de confidențialitate."
+      );
       return;
     }
     setGooglePending(true);
@@ -229,7 +231,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
                   className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                 />
                 <span>
-                  Sunt de acord cu{" "}
+                  Am cel puțin 18 ani și sunt de acord cu{" "}
                   <Link href="/termeni" className="text-brand font-medium hover:underline">
                     termenii
                   </Link>{" "}

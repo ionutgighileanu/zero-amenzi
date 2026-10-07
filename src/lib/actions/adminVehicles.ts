@@ -2,22 +2,22 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { isAdmin } from "@/lib/admin";
 import {
   adminAddVehicleDocSchema,
   adminUpdateVehicleDocSchema,
 } from "@/lib/validation/misc-actions";
 
 /**
- * Verifică sesiunea + emailul de admin înainte de orice mutație pe
- * vehicle_docs. RLS (vezi 20260817120000_admin_vehicle_docs_rls.sql) ar
+ * Verifică sesiunea + rolul de admin (D-032) înainte de orice mutație pe
+ * vehicle_docs. RLS (policy-urile `*_admin`, prin `is_app_admin()`) ar
  * bloca oricum un cont neautorizat, dar verificarea explicită dă un mesaj
  * de eroare clar în loc de un eșec tăcut la insert/update.
  */
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (auth.user?.email !== ADMIN_EMAIL) {
+  if (!isAdmin(auth.user)) {
     throw new Error("Acces interzis.");
   }
   return supabase;

@@ -19,7 +19,10 @@ export type SecurityEvent =
   | "password_reset_requested"
   | "password_reset_rate_limited"
   | "password_changed"
-  | "cron_unauthorized";
+  | "cron_unauthorized"
+  // O plăcuță care a mai avut trial a fost refuzată (D-032) — semnalul pentru
+  // „cineva își face cont nou ca să ia iar anul gratuit".
+  | "trial_reuse_blocked";
 
 type SecurityLogFields = {
   ip?: string;

@@ -12,11 +12,18 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Termeni și condiții" updatedAt="16 septembrie 2026">
+    <LegalPage title="Termeni și condiții" updatedAt="7 octombrie 2026">
       <LegalSection title="Acceptarea termenilor">
         <p>
           Prin folosirea Zero Amenzi accepți termenii de mai jos. Dacă nu ești de acord cu ei, te
           rugăm să nu folosești serviciul.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Cine poate folosi serviciul">
+        <p>
+          Trebuie să ai cel puțin 18 ani ca să îți creezi un cont. La înscriere confirmi că
+          îndeplinești această condiție.
         </p>
       </LegalSection>
 

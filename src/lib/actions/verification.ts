@@ -8,8 +8,8 @@ import { sendVerificationResultEmail } from "@/lib/email/send-verification-resul
 import { createVerificationNotification } from "@/lib/verificationNotification";
 import { fetchSpace, spacePath } from "@/lib/spaces";
 import { CORE_DOC_TYPES } from "@/lib/vehicles";
+import { isAdmin } from "@/lib/admin";
 import {
-  ADMIN_EMAIL,
   PLATE_INVALID_MESSAGE,
   RO_PLATE_INPUT_MAX_LENGTH,
   type VerificationResultValue,
@@ -146,7 +146,7 @@ export async function completeVerificationAction(id: string, results: CompleteVe
   const input = completeVerificationSchema.parse({ id, results });
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (auth.user?.email !== ADMIN_EMAIL) {
+  if (!isAdmin(auth.user)) {
     throw new Error("Acces interzis.");
   }
 
@@ -208,7 +208,7 @@ type VerificationRow = Database["public"]["Tables"]["verification_requests"]["Ro
  * service_role, nu clientul adminului: policy-urile admin pe vehicle_docs
  * acoperă SELECT/INSERT/UPDATE, dar o re-verificare trebuie să înlocuiască
  * un document existent de același tip, iar acțiunea e deja gate-uită de
- * ADMIN_EMAIL mai sus. „nu_gasit" sau lipsa datei nu produc niciun document —
+ * rolul de admin mai sus. „nu_gasit" sau lipsa datei nu produc niciun document —
  * o liniuță e mai onestă decât o dată inventată.
  */
 async function syncVehicleDocs(request: VerificationRow): Promise<string | null> {
