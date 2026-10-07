@@ -6,11 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { Car, CheckCircle2, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import {
-  PENDING_ORG_COOKIE,
-  TERMS_ACCEPTED_COOKIE,
-  MIN_PASSWORD_LENGTH,
-} from "@/lib/constants";
+import { NewPasswordField } from "@/components/auth/NewPasswordField";
+import { PENDING_ORG_COOKIE, TERMS_ACCEPTED_COOKIE } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { signInAction, signUpAction, type AuthActionState } from "@/lib/actions/auth";
 
@@ -202,14 +199,18 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
               </div>
             )}
             <Input label="Email" name="email" type="email" placeholder="nume@email.ro" required />
-            <Input
-              label="Parolă"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              minLength={MIN_PASSWORD_LENGTH}
-            />
+            {mode === "signup" ? (
+              <NewPasswordField />
+            ) : (
+              <Input
+                label="Parolă"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+            )}
             {mode === "login" && (
               <div className="-mt-2 text-right">
                 <Link

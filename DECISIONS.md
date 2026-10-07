@@ -981,3 +981,30 @@ adăugare nu se mai poate corecta din aplicație (doar de admin, în SQL).
 
 Aș reveni dacă: apar cereri legitime de peste 2 schimbări pe an, sau dacă
 plafonul de 2 se dovedește prea strâns pentru flote.
+
+## D-034 · 2026-10 · Parole puternice: 10 caractere, patru tipuri de caractere
+
+Context: parola minimă era de 8 caractere, fără alte cerințe — `password123`
+trecea. Auditul de securitate a semnalat-o.
+
+Decizie: o parolă nouă (la înscriere și la resetare) trebuie să aibă **cel
+puțin 10 caractere, cu literă mică, literă mare, cifră și simbol**. Regulile
+stau într-un singur loc, `src/lib/password.ts`, folosit și de formular, și de
+server:
+
+- **Formular:** câmpul de parolă nouă (`NewPasswordField`) arată lista de
+  cerințe și o bifează pe măsură ce omul scrie.
+- **Server:** `signUpAction` și `updatePasswordAction` verifică aceleași
+  reguli înainte de a apela Supabase.
+- **Supabase** e gardul final: `minimum_password_length = 10` și
+  `password_requirements = lower_upper_letters_digits_symbols`. Simbolurile
+  acceptate în cod sunt exact setul Supabase, ca formularul să nu arate verde
+  o parolă pe care serverul o respinge.
+- Dacă Supabase refuză parola ca fiind furată (verificarea „leaked password",
+  HIBP), omul vede un mesaj explicit în română.
+
+Login-ul nu aplică regulile noi: conturile existente intră cu parola veche.
+Regulile se aplică doar când cineva își setează o parolă.
+
+Setările din `supabase/config.toml` sunt doar pentru dezvoltarea locală. În
+producție trebuie puse manual în Supabase Dashboard → Authentication.

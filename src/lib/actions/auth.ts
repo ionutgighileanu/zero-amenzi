@@ -3,7 +3,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PENDING_ORG_COOKIE, SITE_URL, MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { isAuthWeakPasswordError, type AuthError } from "@supabase/supabase-js";
+import { PENDING_ORG_COOKIE, SITE_URL } from "@/lib/constants";
+import { isStrongPassword, PWNED_PASSWORD_MESSAGE, WEAK_PASSWORD_MESSAGE } from "@/lib/password";
 import {
   clientIp,
   limitLogin,
@@ -21,6 +23,13 @@ function appUrl() {
 
 function safeRedirect(target: string) {
   return target.startsWith("/") ? target : "/app/garage";
+}
+
+/** Supabase respinge parola și după regulile lui; „pwned" vine din verificarea
+ * parolelor furate (HIBP), pe care formularul nu o poate face singur. */
+function weakPasswordMessage(error: AuthError): string | null {
+  if (!isAuthWeakPasswordError(error)) return null;
+  return error.reasons.includes("pwned") ? PWNED_PASSWORD_MESSAGE : WEAK_PASSWORD_MESSAGE;
 }
 
 export async function signInAction(
@@ -85,6 +94,10 @@ export async function signUpAction(
     return { error: "Numele firmei este obligatoriu pentru cont de firmă." };
   }
 
+  if (!isStrongPassword(password)) {
+    return { error: WEAK_PASSWORD_MESSAGE };
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -96,6 +109,8 @@ export async function signUpAction(
   });
 
   if (error) {
+    const weak = weakPasswordMessage(error);
+    if (weak) return { error: weak };
     return {
       error:
         error.message === "User already registered"
@@ -194,12 +209,14 @@ export async function updatePasswordAction(
   }
 
   const password = String(formData.get("password") ?? "");
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `Parola trebuie să aibă cel puțin ${MIN_PASSWORD_LENGTH} caractere.` };
+  if (!isStrongPassword(password)) {
+    return { error: WEAK_PASSWORD_MESSAGE };
   }
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
+    const weak = weakPasswordMessage(error);
+    if (weak) return { error: weak };
     return { error: "Nu am putut schimba parola. Încearcă din nou." };
   }
 

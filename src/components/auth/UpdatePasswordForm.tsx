@@ -4,9 +4,8 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { NewPasswordField } from "@/components/auth/NewPasswordField";
 import { updatePasswordAction, type UpdatePasswordState } from "@/lib/actions/auth";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
 
 const initialState: UpdatePasswordState = null;
 
@@ -35,15 +34,7 @@ export function UpdatePasswordForm() {
             Parolă nouă
           </h1>
           <form className="space-y-4" action={formAction}>
-            <Input
-              label="Parolă nouă"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              minLength={MIN_PASSWORD_LENGTH}
-              hint={`Minim ${MIN_PASSWORD_LENGTH} caractere.`}
-            />
+            <NewPasswordField label="Parolă nouă" />
             {state?.error && (
               <p className="text-sm text-red-600" role="alert">
                 {state.error}

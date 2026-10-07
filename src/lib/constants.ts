@@ -37,14 +37,14 @@ export const PENDING_ORG_COOKIE = "ad_pending_org";
 export const TERMS_ACCEPTED_COOKIE = "ad_terms_accepted";
 
 /**
- * Lungimea minimă a parolei impusă în UI și în acțiunea de resetare (D-030).
+ * Lungimea minimă a parolei (D-034). Restul regulilor sunt în src/lib/password.ts.
  *
  * Gardul autoritar rămâne Supabase (Authentication → `minimum_password_length`
  * în Dashboard pentru producție, `supabase/config.toml` pentru local) — asta e
  * doar apărarea din față, ca omul să afle din formular, nu dintr-un 400 opac.
  * Ține cele două valori sincronizate.
  */
-export const MIN_PASSWORD_LENGTH = 8;
+export const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * Câte zile păstrăm o cerere de verificare publică înainte de ștergerea
