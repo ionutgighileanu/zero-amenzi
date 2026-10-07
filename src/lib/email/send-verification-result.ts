@@ -78,6 +78,16 @@ function buildHtml(params: VerificationResultEmailParams): string {
                 </p>
               </td>
             </tr>
+            <tr>
+              <td style="padding:16px 28px;border-top:1px solid #f1f5f9;">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">
+                  Ai primit acest email o singură dată, pentru că ai cerut verificarea acestui
+                  număr și ai lăsat adresa ta. Nu te-am abonat la nimic.
+                  <a href="${params.appUrl}/politica-confidentialitate" style="color:#64748b;">Cum îți folosim datele</a>.
+                  <br/>Zero Amenzi &middot; verificare documente auto &middot; România
+                </p>
+              </td>
+            </tr>
           </table>
         </td>
       </tr>

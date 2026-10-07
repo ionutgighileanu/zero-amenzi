@@ -2,7 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mapSpaceRow, spacePath } from "@/lib/spaces";
 import { sendAlertEmail } from "@/lib/email/send-alert";
 import { sendPushAlert } from "@/lib/push/send-alert";
-import { NOTIFICATION_THRESHOLDS, EMAIL_DAILY_LIMIT } from "@/lib/constants";
+import {
+  NOTIFICATION_THRESHOLDS,
+  EMAIL_DAILY_LIMIT,
+  VERIFICATION_RETENTION_DAYS,
+} from "@/lib/constants";
 import { todayInRomania } from "@/lib/status";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -52,6 +56,30 @@ export type CheckExpiriesResult = {
   emailsSent: number;
   emailsSkippedCap: number;
 };
+
+/**
+ * Șterge cererile de verificare publică mai vechi de VERIFICATION_RETENTION_DAYS
+ * (D-031, limitarea stocării GDPR). Rulează în aceeași cursă zilnică cu
+ * verificarea expirărilor, ca să nu consume un slot de cron separat pe Hobby.
+ * Notificările de status legate cad prin `on delete cascade`. Nu aruncă: o
+ * eroare de purge nu trebuie să blocheze trimiterea alertelor.
+ */
+export async function purgeOldVerificationRequests(): Promise<number> {
+  const supabase = createAdminClient();
+  const cutoff = new Date(Date.now() - VERIFICATION_RETENTION_DAYS * 86400_000).toISOString();
+
+  const { data, error } = await supabase
+    .from("verification_requests")
+    .delete()
+    .lt("created_at", cutoff)
+    .select("id");
+
+  if (error) {
+    console.error("[cron] purge verification_requests a eșuat:", error);
+    return 0;
+  }
+  return data?.length ?? 0;
+}
 
 /**
  * Rulează zilnic (Vercel Cron, 08:00 UTC — vezi vercel.json). Verifică

@@ -71,6 +71,13 @@ export async function signUpAction(
   const orgName = String(formData.get("orgName") ?? "").trim();
   const cui = String(formData.get("cui") ?? "").trim();
 
+  // Acceptarea termenilor (checkbox-ul din formular) e obligatorie și o
+  // înregistrăm cu timestamp în metadata userului — dovada consimțământului,
+  // legată de cont. Gardul din față e `required` pe input, ăsta e cel real.
+  if (formData.get("acceptTerms") !== "on") {
+    return { error: "Trebuie să accepți termenii și politica de confidențialitate." };
+  }
+
   if (accountType === "B2B" && !orgName) {
     return { error: "Numele firmei este obligatoriu pentru cont de firmă." };
   }
@@ -79,7 +86,10 @@ export async function signUpAction(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${appUrl()}/auth/callback` },
+    options: {
+      emailRedirectTo: `${appUrl()}/auth/callback`,
+      data: { terms_accepted_at: new Date().toISOString() },
+    },
   });
 
   if (error) {

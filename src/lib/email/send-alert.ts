@@ -56,6 +56,15 @@ function buildHtml(params: AlertEmailParams): string {
                 </a>
               </td>
             </tr>
+            <tr>
+              <td style="padding:16px 28px;border-top:1px solid #f1f5f9;">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">
+                  Primești acest email pentru că ai cerut alerte pentru documentele tale auto.
+                  <a href="${appUrl}/app/settings" style="color:#64748b;">Gestionează alertele</a>.
+                  <br/>Zero Amenzi &middot; verificare documente auto &middot; România
+                </p>
+              </td>
+            </tr>
           </table>
         </td>
       </tr>

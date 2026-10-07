@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { PENDING_ORG_COOKIE } from "@/lib/constants";
+import { PENDING_ORG_COOKIE, TERMS_ACCEPTED_COOKIE } from "@/lib/constants";
 
 /**
  * Ținta de emailRedirectTo / redirectTo pentru Supabase Auth: confirmare
@@ -30,6 +30,19 @@ export async function GET(request: Request) {
 
     if (!error && data.user) {
       const cookieStore = await cookies();
+
+      // Înscriere cu Google: momentul acceptării termenilor a fost pus în
+      // cookie înainte de redirect (vezi AuthForm). Îl scriem în metadata abia
+      // acum, o singură dată — dacă userul are deja `terms_accepted_at`
+      // (login repetat), nu îl suprascriem.
+      const termsAcceptedAt = cookieStore.get(TERMS_ACCEPTED_COOKIE)?.value;
+      if (termsAcceptedAt) {
+        cookieStore.delete(TERMS_ACCEPTED_COOKIE);
+        if (!data.user.user_metadata?.terms_accepted_at) {
+          await supabase.auth.updateUser({ data: { terms_accepted_at: termsAcceptedAt } });
+        }
+      }
+
       const pending = cookieStore.get(PENDING_ORG_COOKIE)?.value;
 
       if (pending) {

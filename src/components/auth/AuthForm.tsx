@@ -6,7 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { Car, CheckCircle2, Shield, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PENDING_ORG_COOKIE, MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import {
+  PENDING_ORG_COOKIE,
+  TERMS_ACCEPTED_COOKIE,
+  MIN_PASSWORD_LENGTH,
+} from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { signInAction, signUpAction, type AuthActionState } from "@/lib/actions/auth";
 
@@ -49,6 +53,7 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
   const [account, setAccount] = useState<Account>(defaultAccount);
   const [orgName, setOrgName] = useState("");
   const [cui, setCui] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [googlePending, setGooglePending] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
@@ -56,8 +61,22 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   const signInWithGoogle = async () => {
+    // La înscrierea cu Google acceptarea termenilor e obligatorie, exact ca pe
+    // calea cu email — altfel butonul Google ar fi o portiță de ocolire.
+    if (mode === "signup" && !acceptTerms) {
+      setGoogleError("Bifează acceptarea termenilor și a politicii de confidențialitate.");
+      return;
+    }
     setGooglePending(true);
     setGoogleError(null);
+    // Momentul acceptării termenilor, dus până la /auth/callback (vezi
+    // TERMS_ACCEPTED_COOKIE): la OAuth nu putem pune metadata la signup.
+    if (mode === "signup") {
+      const secure = window.location.protocol === "https:" ? "; secure" : "";
+      document.cookie = `${TERMS_ACCEPTED_COOKIE}=${encodeURIComponent(
+        new Date().toISOString()
+      )}; path=/; max-age=3600; samesite=lax${secure}`;
+    }
     // Salvăm intenția de firmă înainte de redirect — /auth/callback o citește
     // după ce Google confirmă identitatea (aceeași cheie ca la signup email).
     if (mode === "signup" && account === "B2B" && orgName.trim()) {
@@ -198,6 +217,32 @@ export function AuthForm({ mode, defaultAccount = "B2C" }: AuthFormProps) {
                   Ai uitat parola?
                 </Link>
               </div>
+            )}
+            {mode === "signup" && (
+              <label className="flex items-start gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  name="acceptTerms"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  required
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+                />
+                <span>
+                  Sunt de acord cu{" "}
+                  <Link href="/termeni" className="text-brand font-medium hover:underline">
+                    termenii
+                  </Link>{" "}
+                  și{" "}
+                  <Link
+                    href="/politica-confidentialitate"
+                    className="text-brand font-medium hover:underline"
+                  >
+                    politica de confidențialitate
+                  </Link>
+                  .
+                </span>
+              </label>
             )}
             {state?.error && (
               <p className="text-sm text-red-600" role="alert">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkExpiries } from "@/lib/cron/check-expiries";
+import { checkExpiries, purgeOldVerificationRequests } from "@/lib/cron/check-expiries";
 import { logSecurityEvent } from "@/lib/securityLog";
 
 /**
@@ -28,7 +28,16 @@ export async function GET(request: Request) {
 
   try {
     const result = await checkExpiries();
-    return NextResponse.json({ ok: true, ...result });
+    // Retenție GDPR (D-031): ștergem cererile de verificare expirate în aceeași
+    // cursă zilnică. Separat în try, ca o eroare de purge să nu piardă deja
+    // raportul reușit al alertelor.
+    let purged = 0;
+    try {
+      purged = await purgeOldVerificationRequests();
+    } catch (err) {
+      console.error("purge verification_requests a eșuat:", err);
+    }
+    return NextResponse.json({ ok: true, ...result, purged });
   } catch (err) {
     console.error("check-expiries a eșuat:", err);
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });

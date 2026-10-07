@@ -835,3 +835,50 @@ Aș reveni dacă: apare un raport CSP real în loguri după enforce (atunci fie
 adăugăm originea legitimă, fie revenim temporar la Report-Only), sau dacă se
 adaugă un provider de plată/analytics cu scripturi externe — caz în care
 `connect-src`/`script-src` trebuie extinse explicit, nu lărgite cu wildcard.
+
+## D-031 · 2026-10 · Conformitate GDPR/UE: politică, consimțământ, retenție, email
+
+Context: audit de conformitate legală pe 19 puncte (GDPR, ePrivacy, DSA,
+consumer/plată, EAA). Majoritatea erau deja acoperite — RLS pe tot (D-022),
+fără buckets Storage, fără integrări AI, fără analytics/tracking (deci bannerul
+de cookie e corect doar informativ), modaluri închidabile din tastatură. Ce
+lipsea și s-a reparat acum (tot ce nu depinde de lansarea plății):
+
+**Politica de confidențialitate** (`src/app/politica-confidentialitate`):
+- adăugate categoriile de date care lipseau: **IP / date tehnice** (procesate
+  de rate limiting și loguri) și **datele de abonament push** (endpoint + chei).
+- numiți terții care lipseau: **Upstash** (primește IP) și **Google** (OAuth,
+  primește email). Înainte erau doar Supabase/Resend/Vercel.
+- aliniat textul de retenție cu noul job (12 luni, vezi mai jos).
+
+**Consimțământ termeni la signup** (punct de conformitate consumer + GDPR):
+checkbox obligatoriu „sunt de acord cu termenii și politica", pe ambele căi.
+Email: `terms_accepted_at` scris în metadata userului la `signUp`. Google
+OAuth: nu se poate pune metadata la `signInWithOAuth`, deci timestamp-ul merge
+într-un cookie (`TERMS_ACCEPTED_COOKIE`) până la `/auth/callback`, care îl
+scrie în metadata o singură dată. Butonul Google e blocat până la bifare.
+
+**Retenție verificări** (limitarea stocării GDPR): `purgeOldVerificationRequests`
+șterge cererile publice mai vechi de `VERIFICATION_RETENTION_DAYS` (365).
+Rulează în aceeași cursă zilnică cu `checkExpiries` — nu un cron separat, ca să
+nu consume un slot pe Hobby. Notificările de status legate cad prin cascade.
+
+**Footer în emailuri** (anti-spam UE): alerta recurentă are acum footer cu
+„Gestionează alertele" (→ /app/settings) și identificarea expeditorului; emailul
+de rezultat (one-off, destinatar posibil fără cont) are footer care explică de
+ce l-a primit și linkează politica, fără link de dezabonare (nu e abonat la
+nimic). Adresa poștală fizică e cerință US CAN-SPAM, nu UE — omisă deliberat.
+
+Rămas advisory, neblocant: `from: onboarding@resend.dev` (domeniu de test
+Resend) ar trebui domeniu propriu verificat; `Modal.tsx` nu are focus-trap
+(închide pe Esc, dar Tab poate ieși) — de adăugat pentru WCAG complet.
+
+DE FĂCUT ÎNAINTE DE A PORNI PLĂȚILE (nefăcut acum, decizii de business):
+- **Termeni comerciali** în /termeni: preț (12 lei/an/vehicul), ce se întâmplă
+  la expirare, cum se anulează, politica de rambursare.
+- **Reînnoire**: decide auto-renew sau nu. Dacă auto-renew → email de preaviz
+  cu ≥14 zile înainte de fiecare charge (cerință UE auto-renewal).
+- **Retragere**: drept de 14 zile (Directiva drepturilor consumatorului),
+  dacă serviciul nu a început deja la cererea expresă a clientului.
+- **Semnătura webhook**: implementează verificarea HMAC reală în providerul de
+  plată (acum e stub care respinge tot cu 400 — arhitectura e corectă).

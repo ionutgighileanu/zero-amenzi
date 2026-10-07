@@ -30,6 +30,13 @@ export const SITE_URL = resolveSiteUrl();
 export const PENDING_ORG_COOKIE = "ad_pending_org";
 
 /**
+ * Cookie temporar: momentul în care userul a bifat acceptarea termenilor
+ * înainte de un signup cu Google. Calea email pune `terms_accepted_at` direct
+ * în metadata la `signUp`; la OAuth nu putem, deci ducem timestamp-ul până la
+ * /auth/callback, care îl scrie în metadata după ce sesiunea există. ISO 8601. */
+export const TERMS_ACCEPTED_COOKIE = "ad_terms_accepted";
+
+/**
  * Lungimea minimă a parolei impusă în UI și în acțiunea de resetare (D-030).
  *
  * Gardul autoritar rămâne Supabase (Authentication → `minimum_password_length`
@@ -38,6 +45,13 @@ export const PENDING_ORG_COOKIE = "ad_pending_org";
  * Ține cele două valori sincronizate.
  */
 export const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * Câte zile păstrăm o cerere de verificare publică înainte de ștergerea
+ * automată (D-031, principiul GDPR de limitare a stocării). 12 luni = linkul
+ * de rezultat rămâne funcțional rezonabil de mult, apoi plăcuța și emailul
+ * dispar. Ținut egal cu textul din politica de confidențialitate. */
+export const VERIFICATION_RETENTION_DAYS = 365;
 
 /** Tipurile propuse în dropdown-ul „Alerte suplimentare" de pe un vehicul,
  * când spațiul n-are rânduri proprii în `alert_types`. AddDocForm adaugă

@@ -45,6 +45,17 @@ export default function PrivacyPolicyPage() {
               <strong>Nu colectăm documente de identitate.</strong> Nu îți cerem și nu stocăm
               buletin, permis de conducere sau copii după acte — doar datele de expirare.
             </>,
+            <>
+              <strong>Date tehnice</strong> — adresa IP și informații despre browser, procesate
+              automat când folosești aplicația, pentru securitate (limitarea abuzului și a
+              atacurilor automate) și buna funcționare a serviciului.
+            </>,
+            <>
+              <strong>Date pentru notificări push</strong> — dacă le activezi, stocăm
+              identificatorul de abonament al browserului tău (endpoint-ul oferit de
+              Google/Mozilla/Apple și cheile de criptare), strict ca să îți putem trimite alertele.
+              Le ștergem când dezactivezi notificările sau îți ștergi contul.
+            </>,
           ]}
         />
       </LegalSection>
@@ -77,6 +88,15 @@ export default function PrivacyPolicyPage() {
             <>
               <strong>Vercel</strong> — găzduiește aplicația și procesează cererile web.
             </>,
+            <>
+              <strong>Upstash</strong> — serviciu de limitare a traficului (rate limiting) care
+              primește adresa ta IP pentru a bloca abuzul și atacurile automate.
+            </>,
+            <>
+              <strong>Google</strong> — doar dacă alegi „Continuă cu Google&rdquo;: autentificarea
+              se face pe serverele Google, care ne confirmă identitatea și ne transmit adresa ta
+              de email.
+            </>,
           ]}
         />
       </LegalSection>
@@ -96,7 +116,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="Cât timp le păstrăm">
         <LegalList
           items={[
-            "Cererile de verificare publică: păstrate pentru ca linkul de rezultat să rămână funcțional. Poți cere ștergerea lor oricând.",
+            "Cererile de verificare publică: păstrate maximum 12 luni, cât să rămână funcțional linkul de rezultat, apoi șterse automat. Poți cere ștergerea lor și mai devreme, oricând.",
             "Datele contului și ale vehiculelor: cât timp contul există. Ștergerea contului le elimină.",
             "Un vehicul sau șofer șters rămâne recuperabil pentru scurt timp (funcția de anulare a ștergerii), apoi nu mai apare nicăieri în aplicație.",
           ]}
